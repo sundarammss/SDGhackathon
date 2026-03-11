@@ -43,13 +43,6 @@ export default function Header() {
               </>
             ) : (
               <>
-                <Link
-                  to="/"
-                  className="nav-link"
-                  activeProps={{ className: 'nav-link is-active' }}
-                >
-                  Home
-                </Link>
                 {user.role !== 'student' && (
                   <Link
                     to="/dashboard"
@@ -57,6 +50,15 @@ export default function Header() {
                     activeProps={{ className: 'nav-link is-active' }}
                   >
                     Dashboard
+                  </Link>
+                )}
+                {user.role === 'advisor' && (
+                  <Link
+                    to="/portal"
+                    className="nav-link"
+                    activeProps={{ className: 'nav-link is-active' }}
+                  >
+                    Portal
                   </Link>
                 )}
                 {user.role === 'student' && (
@@ -96,13 +98,15 @@ export default function Header() {
                 >
                   Peer Match
                 </Link>
-                <Link
-                  to="/about"
-                  className="nav-link"
-                  activeProps={{ className: 'nav-link is-active' }}
-                >
-                  About
-                </Link>
+                {user.role === 'student' && (
+                  <Link
+                    to="/chat"
+                    className="nav-link"
+                    activeProps={{ className: 'nav-link is-active' }}
+                  >
+                    Chat
+                  </Link>
+                )}
               </>
             )}
           </div>

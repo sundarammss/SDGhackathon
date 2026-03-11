@@ -22,6 +22,29 @@ import {
   fetchQuizAttempts,
   toggleQuizActive,
   fetchPeerMatches,
+  sendPeerRequest,
+  fetchIncomingRequests,
+  fetchOutgoingRequests,
+  acceptPeerRequest,
+  rejectPeerRequest,
+  fetchConversations,
+  fetchMessages,
+  sendMessage,
+  fetchPeerConnections,
+  blockPeer,
+  unblockPeer,
+  fetchBlockedPeers,
+  fetchExamMarks,
+  createExamMark,
+  updateExamMark,
+  deleteExamMark,
+  fetchAttendanceBatches,
+  fetchAttendanceStudents,
+  submitAttendance,
+  fetchAttendance,
+  type ExamMarkOut,
+  type ExamMarkCreate,
+  type ExamMarkUpdate,
   type DashboardSummary,
   type StudentOut,
   type RiskProfile,
@@ -38,6 +61,15 @@ import {
   type QuizSubmit,
   type QuizAttemptOut,
   type PeerMatchResponse,
+  type PeerRequestOut,
+  type ConversationOut,
+  type MessageOut,
+  type PeerConnectionOut,
+  type PeerBlockOut,
+  type BatchInfo,
+  type BatchStudentOut,
+  type AttendanceBulkCreate,
+  type AttendanceOut,
 } from "./api";
 
 export function useDashboardSummary(): UseQueryResult<DashboardSummary> {
@@ -156,5 +188,206 @@ export function usePeerMatches(studentId: number | null): UseQueryResult<PeerMat
     queryFn: () => fetchPeerMatches(studentId!),
     enabled: studentId !== null,
     staleTime: 60_000,
+  });
+}
+
+// ── Peer Request Hooks ───────────────────────────────────────────────
+
+export function useIncomingRequests(): UseQueryResult<PeerRequestOut[]> {
+  return useQuery({
+    queryKey: ["peer-requests", "incoming"],
+    queryFn: fetchIncomingRequests,
+    refetchInterval: 10_000,
+  });
+}
+
+export function useOutgoingRequests(): UseQueryResult<PeerRequestOut[]> {
+  return useQuery({
+    queryKey: ["peer-requests", "outgoing"],
+    queryFn: fetchOutgoingRequests,
+    staleTime: 10_000,
+  });
+}
+
+export function useSendPeerRequest() {
+  const qc = useQueryClient();
+  return useMutation<{ id: number; status: string }, Error, number>({
+    mutationFn: sendPeerRequest,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["peer-requests"] });
+    },
+  });
+}
+
+export function useAcceptPeerRequest() {
+  const qc = useQueryClient();
+  return useMutation<{ status: string }, Error, number>({
+    mutationFn: acceptPeerRequest,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["peer-requests"] });
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+    },
+  });
+}
+
+export function useRejectPeerRequest() {
+  const qc = useQueryClient();
+  return useMutation<{ status: string }, Error, number>({
+    mutationFn: rejectPeerRequest,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["peer-requests"] });
+    },
+  });
+}
+
+// ── Chat Hooks ───────────────────────────────────────────────────────
+
+export function useConversations(): UseQueryResult<ConversationOut[]> {
+  return useQuery({
+    queryKey: ["conversations"],
+    queryFn: fetchConversations,
+    refetchInterval: 5_000,
+  });
+}
+
+export function useMessages(convId: number | null): UseQueryResult<MessageOut[]> {
+  return useQuery({
+    queryKey: ["messages", convId],
+    queryFn: () => fetchMessages(convId!),
+    enabled: convId !== null,
+    refetchInterval: 3_000,
+  });
+}
+
+export function useSendMessage(convId: number) {
+  const qc = useQueryClient();
+  return useMutation<MessageOut, Error, string>({
+    mutationFn: (body) => sendMessage(convId, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["messages", convId] });
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+    },
+  });
+}
+
+export function usePeerConnections(): UseQueryResult<PeerConnectionOut[]> {
+  return useQuery({
+    queryKey: ["peer-connections"],
+    queryFn: fetchPeerConnections,
+    staleTime: 30_000,
+  });
+}
+
+// ── Block Hooks ──────────────────────────────────────────────────
+
+export function useBlockPeer() {
+  const qc = useQueryClient();
+  return useMutation<PeerBlockOut, Error, number>({
+    mutationFn: blockPeer,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+      qc.invalidateQueries({ queryKey: ["blocked-peers"] });
+    },
+  });
+}
+
+export function useUnblockPeer() {
+  const qc = useQueryClient();
+  return useMutation<void, Error, number>({
+    mutationFn: unblockPeer,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+      qc.invalidateQueries({ queryKey: ["blocked-peers"] });
+    },
+  });
+}
+
+export function useBlockedPeers(): UseQueryResult<PeerBlockOut[]> {
+  return useQuery({
+    queryKey: ["blocked-peers"],
+    queryFn: fetchBlockedPeers,
+    staleTime: 10_000,
+  });
+}
+
+// ── Exam Marks Hooks ─────────────────────────────────────────────────
+
+export function useExamMarks(
+  studentId?: number,
+  examName?: string
+): UseQueryResult<ExamMarkOut[]> {
+  return useQuery({
+    queryKey: ["exam-marks", studentId, examName],
+    queryFn: () => fetchExamMarks(studentId, examName),
+    staleTime: 15_000,
+  });
+}
+
+export function useCreateExamMark() {
+  const qc = useQueryClient();
+  return useMutation<ExamMarkOut, Error, ExamMarkCreate>({
+    mutationFn: createExamMark,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["exam-marks"] }); },
+  });
+}
+
+export function useUpdateExamMark() {
+  const qc = useQueryClient();
+  return useMutation<ExamMarkOut, Error, { examId: number; payload: ExamMarkUpdate }>({
+    mutationFn: ({ examId, payload }) => updateExamMark(examId, payload),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["exam-marks"] }); },
+  });
+}
+
+export function useDeleteExamMark() {
+  const qc = useQueryClient();
+  return useMutation<void, Error, number>({
+    mutationFn: deleteExamMark,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["exam-marks"] }); },
+  });
+}
+
+// ── Attendance Hooks ─────────────────────────────────────────────────
+
+export function useAttendanceBatches(): UseQueryResult<BatchInfo[]> {
+  return useQuery({
+    queryKey: ["attendance", "batches"],
+    queryFn: fetchAttendanceBatches,
+    staleTime: 60_000,
+  });
+}
+
+export function useAttendanceStudents(params: {
+  batch_start_year?: number;
+  batch_end_year?: number;
+  section?: string | null;
+  enabled?: boolean;
+}): UseQueryResult<BatchStudentOut[]> {
+  return useQuery({
+    queryKey: ["attendance", "students", params.batch_start_year, params.batch_end_year, params.section],
+    queryFn: () => fetchAttendanceStudents(params),
+    enabled: params.enabled !== false && params.batch_start_year !== undefined,
+    staleTime: 30_000,
+  });
+}
+
+export function useSubmitAttendance() {
+  const qc = useQueryClient();
+  return useMutation<{ saved: number }, Error, AttendanceBulkCreate>({
+    mutationFn: submitAttendance,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["attendance"] }); },
+  });
+}
+
+export function useAttendance(params: {
+  date_val?: string;
+  batch_start_year?: number;
+  batch_end_year?: number;
+  section?: string | null;
+}): UseQueryResult<AttendanceOut[]> {
+  return useQuery({
+    queryKey: ["attendance", "records", params],
+    queryFn: () => fetchAttendance(params),
+    staleTime: 15_000,
   });
 }

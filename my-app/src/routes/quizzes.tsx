@@ -38,7 +38,7 @@ function QuizzesPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <ClipboardList className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-3xl font-bold text-[var(--sea-ink)]">
             {isTeacher ? "Quiz Management" : "Quizzes"}
           </h1>
         </div>
@@ -76,7 +76,7 @@ function QuizList({
   if (isLoading) return <LoadingSpinner />;
   if (!quizzes?.length) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-500 dark:border-gray-700 dark:bg-gray-800/30 dark:text-gray-400">
+      <div className="rounded-xl border border-dashed border-[var(--line)] bg-[var(--island-bg)] p-12 text-center text-[var(--sea-ink-soft)]">
         <ClipboardList className="mx-auto mb-3 h-10 w-10" />
         <p>{isTeacher ? "No quizzes created yet." : "No active quizzes available."}</p>
       </div>
@@ -87,25 +87,25 @@ function QuizList({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+      <h2 className="text-xl font-semibold text-[var(--sea-ink)]">
         {isTeacher ? "All Quizzes" : "Active Quizzes"}
       </h2>
       <div className="grid gap-4 sm:grid-cols-2">
         {displayed.map((q) => (
           <div
             key={q.id}
-            className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+            className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] p-5 shadow-sm"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{q.title}</h3>
-                {q.description && <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{q.description}</p>}
+                <h3 className="text-lg font-semibold text-[var(--sea-ink)]">{q.title}</h3>
+                {q.description && <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">{q.description}</p>}
               </div>
-              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${q.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"}`}>
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${q.is_active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-[var(--island-bg)] text-[var(--sea-ink-soft)] border border-[var(--line)]"}`}>
                 {q.is_active ? "Active" : "Closed"}
               </span>
             </div>
-            <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
+            <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--sea-ink-soft)]">
               <span>{q.question_count} questions</span>
               <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{q.duration_minutes} min</span>
               {q.creator_name && <span>By {q.creator_name}</span>}
@@ -135,7 +135,7 @@ function QuizList({
                   <button
                     onClick={() => toggleMutation.mutate(q.id)}
                     disabled={toggleMutation.isPending}
-                    className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                    className="flex items-center gap-1 rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[var(--sea-ink-soft)] hover:bg-[var(--island-bg)]"
                   >
                     {q.is_active ? <ToggleRight className="h-3 w-3" /> : <ToggleLeft className="h-3 w-3" />}
                     {q.is_active ? "Close" : "Reopen"}
@@ -157,21 +157,21 @@ function MyResults() {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">My Results</h2>
+      <h2 className="text-xl font-semibold text-[var(--sea-ink)]">My Results</h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {attempts.map((a) => (
-          <div key={a.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h4 className="font-medium text-gray-900 dark:text-gray-100">{a.quiz_title}</h4>
+          <div key={a.id} className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] p-4 shadow-sm">
+            <h4 className="font-medium text-[var(--sea-ink)]">{a.quiz_title}</h4>
             <div className="mt-2 flex items-center gap-2">
               <div className={`text-2xl font-bold ${(a.score ?? 0) >= 70 ? "text-green-600" : (a.score ?? 0) >= 40 ? "text-yellow-600" : "text-red-600"}`}>
                 {a.score?.toFixed(0)}%
               </div>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-[var(--sea-ink-soft)]">
                 {a.correct_answers}/{a.total_questions} correct
               </span>
             </div>
             {a.completed_at && (
-              <p className="mt-1 text-xs text-gray-400">{new Date(a.completed_at).toLocaleDateString()}</p>
+              <p className="mt-1 text-xs text-[var(--sea-ink-soft)]">{new Date(a.completed_at).toLocaleDateString()}</p>
             )}
           </div>
         ))}
@@ -208,13 +208,13 @@ function TakeQuiz({ quizId, onBack }: { quizId: number; onBack: () => void }) {
   if (result) {
     return (
       <div className="mx-auto max-w-2xl space-y-6 p-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] p-8 text-center shadow-sm">
           <Trophy className={`mx-auto h-16 w-16 ${result.score >= 70 ? "text-green-500" : result.score >= 40 ? "text-yellow-500" : "text-red-500"}`} />
-          <h2 className="mt-4 text-3xl font-bold text-gray-900 dark:text-gray-100">Quiz Complete!</h2>
+          <h2 className="mt-4 text-3xl font-bold text-[var(--sea-ink)]">Quiz Complete!</h2>
           <div className={`mt-2 text-5xl font-extrabold ${result.score >= 70 ? "text-green-600" : result.score >= 40 ? "text-yellow-600" : "text-red-600"}`}>
             {result.score.toFixed(0)}%
           </div>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-[var(--sea-ink-soft)]">
             You answered {result.correct} out of {result.total} questions correctly.
           </p>
           <button onClick={onBack} className="mt-6 rounded-lg bg-purple-600 px-6 py-2 text-sm font-medium text-white hover:bg-purple-700">
@@ -234,17 +234,17 @@ function TakeQuiz({ quizId, onBack }: { quizId: number; onBack: () => void }) {
       </button>
 
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{quiz.title}</h2>
-        <span className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+        <h2 className="text-2xl font-bold text-[var(--sea-ink)]">{quiz.title}</h2>
+        <span className="flex items-center gap-1 text-sm text-[var(--sea-ink-soft)]">
           <Clock className="h-4 w-4" /> {quiz.duration_minutes} min
         </span>
       </div>
-      {quiz.description && <p className="text-sm text-gray-600 dark:text-gray-400">{quiz.description}</p>}
+      {quiz.description && <p className="text-sm text-[var(--sea-ink-soft)]">{quiz.description}</p>}
 
       <div className="space-y-5">
         {quiz.questions.map((q, idx) => (
-          <div key={q.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <p className="font-medium text-gray-900 dark:text-gray-100">
+          <div key={q.id} className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] p-5 shadow-sm">
+            <p className="font-medium text-[var(--sea-ink)]">
               <span className="mr-2 text-purple-600 dark:text-purple-400">Q{idx + 1}.</span>
               {q.question_text}
             </p>
@@ -255,7 +255,7 @@ function TakeQuiz({ quizId, onBack }: { quizId: number; onBack: () => void }) {
                   className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition ${
                     answers[q.id] === opt.id
                       ? "border-purple-500 bg-purple-50 dark:border-purple-500 dark:bg-purple-950/30"
-                      : "border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50"
+                      : "border-[var(--line)] hover:bg-[var(--island-bg)]"
                   }`}
                 >
                   <input
@@ -265,7 +265,7 @@ function TakeQuiz({ quizId, onBack }: { quizId: number; onBack: () => void }) {
                     onChange={() => handleSelect(q.id, opt.id)}
                     className="accent-purple-600"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">{opt.option_text}</span>
+                  <span className="text-[var(--sea-ink)]">{opt.option_text}</span>
                 </label>
               ))}
             </div>
@@ -274,7 +274,7 @@ function TakeQuiz({ quizId, onBack }: { quizId: number; onBack: () => void }) {
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-500 dark:text-gray-400">
+        <span className="text-sm text-[var(--sea-ink-soft)]">
           {Object.keys(answers).length}/{quiz.questions.length} answered
         </span>
         <button
@@ -377,16 +377,16 @@ function CreateQuiz({ onBack }: { onBack: () => void }) {
         <ArrowLeft className="h-4 w-4" /> Back to Quizzes
       </button>
 
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create New Quiz</h2>
+      <h2 className="text-2xl font-bold text-[var(--sea-ink)]">Create New Quiz</h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] p-5">
           <input
             type="text"
             placeholder="Quiz title..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="mb-3 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+            className="mb-3 w-full rounded-lg border border-[var(--line)] bg-[var(--island-bg)] px-4 py-2 text-sm text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-[rgba(79,184,178,0.4)]"
             required
           />
           <textarea
@@ -394,33 +394,33 @@ function CreateQuiz({ onBack }: { onBack: () => void }) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            className="mb-3 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+            className="mb-3 w-full rounded-lg border border-[var(--line)] bg-[var(--island-bg)] px-4 py-2 text-sm text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-[rgba(79,184,178,0.4)]"
           />
           <div className="flex items-center gap-3">
-            <label className="text-sm text-gray-600 dark:text-gray-400">Duration (minutes):</label>
+            <label className="text-sm text-[var(--sea-ink-soft)]">Duration (minutes):</label>
             <input
               type="number"
               min={1}
               max={180}
               value={duration}
               onChange={(e) => setDuration(Number(e.target.value))}
-              className="w-20 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+              className="w-20 rounded-lg border border-[var(--line)] bg-[var(--island-bg)] px-3 py-1.5 text-sm text-[var(--sea-ink)] focus:outline-none focus:ring-2 focus:ring-[rgba(79,184,178,0.4)]"
             />
           </div>
           <div className="mt-3 flex items-center gap-3">
-            <label className="text-sm text-gray-600 dark:text-gray-400">Assign to Department:</label>
+            <label className="text-sm text-[var(--sea-ink-soft)]">Assign to Department:</label>
             <input
               type="text"
               placeholder="Leave blank for all departments"
               value={assignedDepartment}
               onChange={(e) => setAssignedDepartment(e.target.value)}
-              className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+              className="flex-1 rounded-lg border border-[var(--line)] bg-[var(--island-bg)] px-3 py-1.5 text-sm text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-[rgba(79,184,178,0.4)]"
             />
           </div>
         </div>
 
         {questions.map((q, qi) => (
-          <div key={qi} className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+          <div key={qi} className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] p-5">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">Question {qi + 1}</span>
               {questions.length > 1 && (
@@ -434,7 +434,7 @@ function CreateQuiz({ onBack }: { onBack: () => void }) {
               placeholder="Enter question..."
               value={q.question_text}
               onChange={(e) => updateQuestion(qi, e.target.value)}
-              className="mb-3 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+              className="mb-3 w-full rounded-lg border border-[var(--line)] bg-[var(--island-bg)] px-4 py-2 text-sm text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-[rgba(79,184,178,0.4)]"
               required
             />
             <div className="space-y-2">
@@ -443,7 +443,7 @@ function CreateQuiz({ onBack }: { onBack: () => void }) {
                   <button
                     type="button"
                     onClick={() => setCorrect(qi, oi)}
-                    className={`flex-shrink-0 rounded-full p-1 ${opt.is_correct ? "text-green-600" : "text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400"}`}
+                    className={`flex-shrink-0 rounded-full p-1 ${opt.is_correct ? "text-green-600" : "text-[var(--line)] hover:text-[var(--sea-ink-soft)]"}`}
                     title="Mark as correct"
                   >
                     <CheckCircle2 className="h-5 w-5" />
@@ -453,7 +453,7 @@ function CreateQuiz({ onBack }: { onBack: () => void }) {
                     placeholder={`Option ${oi + 1}`}
                     value={opt.option_text}
                     onChange={(e) => updateOption(qi, oi, e.target.value)}
-                    className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                    className="flex-1 rounded-lg border border-[var(--line)] bg-[var(--island-bg)] px-3 py-1.5 text-sm text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-[rgba(79,184,178,0.4)]"
                     required
                   />
                   {q.options.length > 2 && (
@@ -477,13 +477,13 @@ function CreateQuiz({ onBack }: { onBack: () => void }) {
         <button
           type="button"
           onClick={addQuestion}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 py-3 text-sm text-gray-500 hover:border-purple-400 hover:text-purple-600 dark:border-gray-700 dark:text-gray-400"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--line)] py-3 text-sm text-[var(--sea-ink-soft)] hover:border-purple-400 hover:text-purple-600"
         >
           <Plus className="h-4 w-4" /> Add Question
         </button>
 
         <div className="flex justify-end gap-3">
-          <button type="button" onClick={onBack} className="rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700">Cancel</button>
+          <button type="button" onClick={onBack} className="rounded-lg px-4 py-2 text-sm text-[var(--sea-ink-soft)] hover:bg-[var(--island-bg)]">Cancel</button>
           <button
             type="submit"
             disabled={!isValid || createMutation.isPending}
@@ -516,7 +516,7 @@ function QuizResults({ quizId, onBack }: { quizId: number; onBack: () => void })
 
       <div className="flex items-center gap-3">
         <Trophy className="h-8 w-8 text-yellow-500" />
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        <h2 className="text-2xl font-bold text-[var(--sea-ink)]">
           Results: {quiz?.title || "Quiz"}
         </h2>
       </div>
@@ -528,29 +528,29 @@ function QuizResults({ quizId, onBack }: { quizId: number; onBack: () => void })
       </div>
 
       {!attempts?.length ? (
-        <p className="text-center text-gray-500 dark:text-gray-400 py-8">No submissions yet.</p>
+        <p className="text-center text-[var(--sea-ink-soft)] py-8">No submissions yet.</p>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+        <div className="overflow-hidden rounded-xl border border-[var(--line)]">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-800">
+            <thead className="bg-[var(--island-bg)]">
               <tr>
-                <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Student</th>
-                <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Score</th>
-                <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Correct</th>
-                <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Date</th>
+                <th className="px-4 py-3 font-medium text-[var(--sea-ink-soft)]">Student</th>
+                <th className="px-4 py-3 font-medium text-[var(--sea-ink-soft)]">Score</th>
+                <th className="px-4 py-3 font-medium text-[var(--sea-ink-soft)]">Correct</th>
+                <th className="px-4 py-3 font-medium text-[var(--sea-ink-soft)]">Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-[var(--line)]">
               {attempts.map((a) => (
-                <tr key={a.id} className="bg-white dark:bg-gray-900">
-                  <td className="px-4 py-3 text-gray-900 dark:text-gray-100">{a.student_name}</td>
+                <tr key={a.id}>
+                  <td className="px-4 py-3 text-[var(--sea-ink)]">{a.student_name}</td>
                   <td className="px-4 py-3">
                     <span className={`font-semibold ${(a.score ?? 0) >= 70 ? "text-green-600" : (a.score ?? 0) >= 40 ? "text-yellow-600" : "text-red-600"}`}>
                       {a.score?.toFixed(0)}%
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{a.correct_answers}/{a.total_questions}</td>
-                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{a.completed_at ? new Date(a.completed_at).toLocaleDateString() : "-"}</td>
+                  <td className="px-4 py-3 text-[var(--sea-ink-soft)]">{a.correct_answers}/{a.total_questions}</td>
+                  <td className="px-4 py-3 text-[var(--sea-ink-soft)]">{a.completed_at ? new Date(a.completed_at).toLocaleDateString() : "-"}</td>
                 </tr>
               ))}
             </tbody>
@@ -563,9 +563,9 @@ function QuizResults({ quizId, onBack }: { quizId: number; onBack: () => void })
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</div>
-      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{label}</div>
+    <div className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] p-4 text-center shadow-sm">
+      <div className="text-2xl font-bold text-[var(--sea-ink)]">{value}</div>
+      <div className="mt-1 text-xs text-[var(--sea-ink-soft)]">{label}</div>
     </div>
   );
 }

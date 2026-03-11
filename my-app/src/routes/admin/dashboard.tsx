@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Users, Search, Eye, Pencil, AlertCircle, BookOpen } from "lucide-react";
+import { Users, Search, Eye, Pencil, AlertCircle } from "lucide-react";
 import api from "../../lib/api";
 import { useAuthStore } from "../../lib/auth";
 
@@ -75,18 +75,6 @@ function AdminDashboard() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/admin/teachers"
-            className="flex items-center gap-2 rounded-xl bg-[rgba(99,102,241,0.1)] px-4 py-2 text-sm font-semibold text-[#6366f1] transition hover:bg-[rgba(99,102,241,0.2)]"
-          >
-            <BookOpen className="h-4 w-4" />
-            Teachers
-          </Link>
-          <span className="rounded-xl bg-[rgba(245,158,11,0.1)] px-3 py-1.5 text-sm font-semibold text-[#f59e0b]">
-            {students.length} Students
-          </span>
-        </div>
       </div>
 
       {/* Search */}
@@ -110,6 +98,11 @@ function AdminDashboard() {
       )}
 
       {/* Table */}
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-sm font-semibold text-[var(--sea-ink-soft)]">
+          {filtered.length} of {students.length} Students
+        </span>
+      </div>
       <div className="island-shell overflow-hidden rounded-2xl">
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -121,34 +114,34 @@ function AdminDashboard() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="min-w-[1100px] w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--line)] bg-[var(--island-bg)]">
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
                     ID
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
                     Name
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
                     Email
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
                     Phone
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
                     Department
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
                     Section
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
                     Batch
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
                     Created
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">
                     Actions
                   </th>
                 </tr>

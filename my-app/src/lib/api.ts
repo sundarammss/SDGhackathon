@@ -320,3 +320,263 @@ export const toggleQuizActive = async (quizId: number): Promise<QuizOut> => {
   const { data } = await api.patch(`/api/v1/quiz/quizzes/${quizId}/toggle`);
   return data;
 };
+
+// ── Peer Request Types ───────────────────────────────────────────────
+
+export interface PeerRequestOut {
+  id: number;
+  from_student_id: number;
+  from_student_name: string;
+  to_student_id: number;
+  to_student_name: string;
+  status: "pending" | "accepted" | "rejected";
+  created_at: string;
+}
+
+// ── Chat Types ───────────────────────────────────────────────────────
+
+export interface ConversationOut {
+  id: number;
+  other_student_id: number;
+  other_student_name: string;
+  last_message: string | null;
+  created_at: string;
+  is_blocked: boolean;
+  blocked_by_me: boolean;
+}
+
+export interface MessageOut {
+  id: number;
+  conversation_id: number;
+  sender_id: number;
+  sender_name: string;
+  body: string;
+  created_at: string;
+}
+
+// ── Peer Request API ─────────────────────────────────────────────────
+
+export const sendPeerRequest = async (toStudentId: number): Promise<{ id: number; status: string }> => {
+  const { data } = await api.post("/api/v1/peer-requests/", { to_student_id: toStudentId });
+  return data;
+};
+
+export const fetchIncomingRequests = async (): Promise<PeerRequestOut[]> => {
+  const { data } = await api.get("/api/v1/peer-requests/incoming");
+  return data;
+};
+
+export const fetchOutgoingRequests = async (): Promise<PeerRequestOut[]> => {
+  const { data } = await api.get("/api/v1/peer-requests/outgoing");
+  return data;
+};
+
+export const acceptPeerRequest = async (requestId: number): Promise<{ status: string }> => {
+  const { data } = await api.patch(`/api/v1/peer-requests/${requestId}/accept`);
+  return data;
+};
+
+export const rejectPeerRequest = async (requestId: number): Promise<{ status: string }> => {
+  const { data } = await api.patch(`/api/v1/peer-requests/${requestId}/reject`);
+  return data;
+};
+
+// ── Conversations API ────────────────────────────────────────────────
+
+export const fetchConversations = async (): Promise<ConversationOut[]> => {
+  const { data } = await api.get("/api/v1/conversations/");
+  return data;
+};
+
+export const fetchMessages = async (convId: number): Promise<MessageOut[]> => {
+  const { data } = await api.get(`/api/v1/conversations/${convId}/messages`);
+  return data;
+};
+
+export const sendMessage = async (convId: number, body: string): Promise<MessageOut> => {
+  const { data } = await api.post(`/api/v1/conversations/${convId}/messages`, { body });
+  return data;
+};
+
+// ── Block / Unblock API ──────────────────────────────────────────────
+
+export interface PeerBlockOut {
+  id: number;
+  blocker_id: number;
+  blocked_id: number;
+  created_at: string;
+}
+
+export const blockPeer = async (blockedStudentId: number): Promise<PeerBlockOut> => {
+  const { data } = await api.post("/api/v1/blocks/", { blocked_student_id: blockedStudentId });
+  return data;
+};
+
+export const unblockPeer = async (blockedStudentId: number): Promise<void> => {
+  await api.delete(`/api/v1/blocks/${blockedStudentId}`);
+};
+
+export const fetchBlockedPeers = async (): Promise<PeerBlockOut[]> => {
+  const { data } = await api.get("/api/v1/blocks/");
+  return data;
+};
+
+// ── Peer Connections (teacher/admin view) ────────────────────────────
+
+export interface PeerConnectionOut {
+  request_id: number;
+  student_a_id: number;
+  student_a_name: string;
+  student_a_department: string | null;
+  student_b_id: number;
+  student_b_name: string;
+  student_b_department: string | null;
+  connected_at: string;
+}
+
+export const fetchPeerConnections = async (): Promise<PeerConnectionOut[]> => {
+  const { data } = await api.get("/api/v1/peer-connections/");
+  return data;
+};
+
+// ── Exam Marks Types ─────────────────────────────────────────────────
+
+export interface ExamMarkOut {
+  id: number;
+  student_id: number;
+  student_name: string;
+  exam_name: string;
+  marks: number;
+  exam_date: string;
+  created_at: string;
+}
+
+export interface ExamMarkCreate {
+  student_id: number;
+  exam_name: string;
+  marks: number;
+  exam_date: string;
+}
+
+export interface ExamMarkUpdate {
+  exam_name?: string;
+  marks?: number;
+  exam_date?: string;
+}
+
+// ── Exam Marks API ───────────────────────────────────────────────────
+
+export const fetchExamMarks = async (
+  studentId?: number,
+  examName?: string
+): Promise<ExamMarkOut[]> => {
+  const params: Record<string, string | number> = {};
+  if (studentId !== undefined) params.student_id = studentId;
+  if (examName !== undefined) params.exam_name = examName;
+  const { data } = await api.get("/api/v1/exam-marks/", { params });
+  return data;
+};
+
+export const createExamMark = async (
+  payload: ExamMarkCreate
+): Promise<ExamMarkOut> => {
+  const { data } = await api.post("/api/v1/exam-marks/", payload);
+  return data;
+};
+
+export const updateExamMark = async (
+  examId: number,
+  payload: ExamMarkUpdate
+): Promise<ExamMarkOut> => {
+  const { data } = await api.put(`/api/v1/exam-marks/${examId}`, payload);
+  return data;
+};
+
+export const deleteExamMark = async (examId: number): Promise<void> => {
+  await api.delete(`/api/v1/exam-marks/${examId}`);
+};
+
+// ── Attendance Types ─────────────────────────────────────────────────
+
+export interface BatchStudentOut {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  section: string | null;
+  department: string;
+  batch: string;
+}
+
+export interface BatchInfo {
+  batch_start_year: number;
+  batch_end_year: number;
+  section: string | null;
+  label: string;
+}
+
+export interface AttendanceRecord {
+  student_id: number;
+  status: "present" | "absent";
+}
+
+export interface AttendanceBulkCreate {
+  date: string;
+  subject?: string | null;
+  records: AttendanceRecord[];
+}
+
+export interface AttendanceOut {
+  id: number;
+  student_id: number;
+  student_name: string;
+  teacher_id: number;
+  date: string;
+  status: "present" | "absent";
+  subject: string | null;
+  created_at: string;
+}
+
+// ── Attendance API ───────────────────────────────────────────────────
+
+export const fetchAttendanceBatches = async (): Promise<BatchInfo[]> => {
+  const { data } = await api.get("/api/v1/attendance/batches");
+  return data;
+};
+
+export const fetchAttendanceStudents = async (params: {
+  batch_start_year?: number;
+  batch_end_year?: number;
+  section?: string | null;
+}): Promise<BatchStudentOut[]> => {
+  const p: Record<string, string | number> = {};
+  if (params.batch_start_year !== undefined) p.batch_start_year = params.batch_start_year;
+  if (params.batch_end_year !== undefined) p.batch_end_year = params.batch_end_year;
+  if (params.section) p.section = params.section;
+  const { data } = await api.get("/api/v1/attendance/students", { params: p });
+  return data;
+};
+
+export const submitAttendance = async (
+  payload: AttendanceBulkCreate
+): Promise<{ saved: number }> => {
+  const { data } = await api.post("/api/v1/attendance/submit", payload);
+  return data;
+};
+
+export const fetchAttendance = async (params: {
+  date_val?: string;
+  student_id?: number;
+  batch_start_year?: number;
+  batch_end_year?: number;
+  section?: string | null;
+}): Promise<AttendanceOut[]> => {
+  const p: Record<string, string | number> = {};
+  if (params.date_val) p.date_val = params.date_val;
+  if (params.student_id !== undefined) p.student_id = params.student_id;
+  if (params.batch_start_year !== undefined) p.batch_start_year = params.batch_start_year;
+  if (params.batch_end_year !== undefined) p.batch_end_year = params.batch_end_year;
+  if (params.section) p.section = params.section;
+  const { data } = await api.get("/api/v1/attendance/", { params: p });
+  return data;
+};

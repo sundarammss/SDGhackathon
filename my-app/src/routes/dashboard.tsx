@@ -52,7 +52,7 @@ function healthBar(score: number) {
         : "bg-red-500";
   return (
     <div className="flex items-center gap-2">
-      <div className="h-2 w-24 rounded-full bg-gray-200 dark:bg-gray-700">
+      <div className="h-2 w-24 rounded-full bg-[var(--progress-track)]">
         <div
           className={`h-2 rounded-full ${color}`}
           style={{ width: `${pct}%` }}
@@ -82,7 +82,7 @@ function burnoutLabel(cat: string) {
       cls: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
     },
   };
-  const m = map[cat] ?? { label: cat, cls: "bg-gray-100 text-gray-700" };
+  const m = map[cat] ?? { label: cat, cls: "bg-[rgba(79,184,178,0.1)] text-[var(--sea-ink-soft)]" };
   return (
     <span
       className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${m.cls}`}
@@ -280,6 +280,8 @@ function DataTable<T>({
 function Dashboard() {
   const user = useAuthStore((s) => s.user);
   const { data, isLoading, isError, error } = useDashboardSummary();
+  const isAdvisor = user?.role === "advisor";
+  const [batchFilter, setBatchFilter] = useState("");
 
   if (user?.role === "student") {
     return <StudentPersonalDashboard />;
@@ -314,6 +316,13 @@ function Dashboard() {
 
   if (!data) return null;
 
+  const batchOptions = isAdvisor
+    ? [...new Set(data.cohort_risks.map((r) => r.batch).filter(Boolean))] as string[]
+    : [];
+
+  const filteredCohortRisks = isAdvisor && batchFilter
+    ? data.cohort_risks.filter((r) => r.batch === batchFilter)
+    : data.cohort_risks;
   return (
     <main className="page-wrap px-4 pb-8 pt-8">
       {/* Header */}
@@ -362,11 +371,36 @@ function Dashboard() {
 
       {/* Cohort Risk Table */}
       <section className="island-shell mb-8 rounded-2xl p-6">
-        <h2 className="mb-4 text-lg font-bold text-[var(--sea-ink)]">
-          Cohort Risk Clusters
-        </h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-bold text-[var(--sea-ink)]">
+            Cohort Risk Clusters
+          </h2>
+          {isAdvisor && batchOptions.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="batch-filter"
+                className="text-sm font-medium text-[var(--sea-ink-soft)]"
+              >
+                Batch
+              </label>
+              <select
+                id="batch-filter"
+                value={batchFilter}
+                onChange={(e) => setBatchFilter(e.target.value)}
+                className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] px-3 py-1.5 text-sm text-[var(--sea-ink)] focus:outline-none focus:ring-2 focus:ring-[rgba(79,184,178,0.4)]"
+              >
+                <option value="">All batches</option>
+                {batchOptions.sort().map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
         <DataTable
-          data={data.cohort_risks}
+          data={filteredCohortRisks}
           columns={cohortColumns}
           searchPlaceholder="Search students, department…"
         />
@@ -484,7 +518,7 @@ function StudentPersonalDashboard() {
                       {isNegative ? "↑ Risk" : "↓ Risk"}
                     </span>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                  <div className="h-2 w-full rounded-full bg-[var(--progress-track)]">
                     <div
                       className={`h-2 rounded-full ${isNegative ? "bg-red-400" : "bg-emerald-400"}`}
                       style={{ width: `${pct}%` }}

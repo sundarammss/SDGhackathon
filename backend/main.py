@@ -12,6 +12,9 @@ from app.seed import seed_if_empty
 from app.database import async_session
 
 from app.routers import auth, students, courses, dashboard, intelligence, quiz, forum, teachers
+from app.routers import chat
+from app.routers import exam_marks
+from app.routers import attendance
 
 
 @asynccontextmanager
@@ -55,6 +58,9 @@ app.include_router(intelligence.router)
 app.include_router(quiz.router)
 app.include_router(forum.router)
 app.include_router(teachers.router)
+app.include_router(chat.router)
+app.include_router(exam_marks.router)
+app.include_router(attendance.router)
 
 
 # ── Health check ───────────────────────────────────────────────────────

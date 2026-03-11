@@ -11,6 +11,7 @@ import {
   Cell,
 } from "recharts";
 import { useStudents, useWhatIfMutation } from "../lib/hooks";
+import { useAuthStore } from "../lib/auth";
 import type { WhatIfRequest, WhatIfResponse, StudentOut } from "../lib/api";
 import {
   FlaskConical,
@@ -59,7 +60,7 @@ function ParamSlider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-[#4fb8b2] dark:bg-gray-700"
+        className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[var(--progress-track)] accent-[#4fb8b2]"
       />
       <div className="mt-0.5 flex justify-between text-[10px] text-[var(--sea-ink-soft)]">
         <span>
@@ -78,11 +79,13 @@ function ParamSlider({
 /* ── What-If Simulator Page ───────────────────────────────────────── */
 
 function Simulator() {
+  const user = useAuthStore((s) => s.user);
+  const isStudent = user?.role === "student";
   const { data: students, isLoading: studentsLoading } = useStudents();
   const mutation = useWhatIfMutation();
 
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(
-    null
+    isStudent && user ? user.id : null
   );
   const [params, setParams] = useState<WhatIfRequest>({
     attendance_change_pct: 0,
@@ -129,33 +132,35 @@ function Simulator() {
             Scenario Parameters
           </h2>
 
-          {/* Student selector */}
-          <div className="relative mb-6">
-            <label className="mb-1 block text-sm font-medium text-[var(--sea-ink)]">
-              Select Student
-            </label>
-            <div className="relative">
-              <select
-                value={selectedStudentId ?? ""}
-                onChange={(e) =>
-                  setSelectedStudentId(
-                    e.target.value ? Number(e.target.value) : null
-                  )
-                }
-                className="w-full appearance-none rounded-xl border border-[var(--line)] bg-[var(--island-bg)] py-2.5 pl-4 pr-10 text-sm text-[var(--sea-ink)] focus:outline-none focus:ring-2 focus:ring-[rgba(79,184,178,0.4)]"
-              >
-                <option value="">
-                  {studentsLoading ? "Loading…" : "Choose a student"}
-                </option>
-                {studentList.map((s: StudentOut) => (
-                  <option key={s.id} value={s.id}>
-                    {s.first_name} {s.last_name} ({s.department ?? "N/A"})
+          {/* Student selector — hidden for students (auto-uses own ID) */}
+          {!isStudent && (
+            <div className="relative mb-6">
+              <label className="mb-1 block text-sm font-medium text-[var(--sea-ink)]">
+                Select Student
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedStudentId ?? ""}
+                  onChange={(e) =>
+                    setSelectedStudentId(
+                      e.target.value ? Number(e.target.value) : null
+                    )
+                  }
+                  className="w-full appearance-none rounded-xl border border-[var(--line)] bg-[var(--island-bg)] py-2.5 pl-4 pr-10 text-sm text-[var(--sea-ink)] focus:outline-none focus:ring-2 focus:ring-[rgba(79,184,178,0.4)]"
+                >
+                  <option value="">
+                    {studentsLoading ? "Loading…" : "Choose a student"}
                   </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sea-ink-soft)]" />
+                  {studentList.map((s: StudentOut) => (
+                    <option key={s.id} value={s.id}>
+                      {s.first_name} {s.last_name} ({s.department ?? "N/A"})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--sea-ink-soft)]" />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Sliders */}
           <div className="space-y-5">

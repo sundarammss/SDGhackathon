@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, Outlet, useChildMatches } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { BookOpen, Search, Pencil, AlertCircle } from "lucide-react";
 import api from "../../lib/api";
@@ -18,6 +18,7 @@ interface TeacherRow {
 }
 
 function AdminTeachers() {
+  const childMatches = useChildMatches();
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const [teachers, setTeachers] = useState<TeacherRow[]>([]);
@@ -26,7 +27,10 @@ function AdminTeachers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const isChildRoute = childMatches.length > 0;
+
   useEffect(() => {
+    if (isChildRoute) return;
     if (!user || user.role !== "admin") {
       navigate({ to: "/" });
       return;
@@ -39,7 +43,7 @@ function AdminTeachers() {
       })
       .catch(() => setError("Failed to load teachers."))
       .finally(() => setLoading(false));
-  }, [user, navigate]);
+  }, [user, navigate, isChildRoute]);
 
   useEffect(() => {
     const q = search.toLowerCase();
@@ -52,6 +56,8 @@ function AdminTeachers() {
       )
     );
   }, [search, teachers]);
+
+  if (isChildRoute) return <Outlet />;
 
   return (
     <main className="page-wrap px-4 pb-12 pt-10">
@@ -69,17 +75,6 @@ function AdminTeachers() {
               Manage all staff records
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="rounded-xl bg-[rgba(99,102,241,0.1)] px-3 py-1.5 text-sm font-semibold text-[#6366f1]">
-            {teachers.length} Teachers
-          </span>
-          <Link
-            to="/admin/dashboard"
-            className="rounded-xl border border-[var(--line)] px-3 py-1.5 text-sm font-medium text-[var(--sea-ink-soft)] transition hover:text-[var(--sea-ink)]"
-          >
-            ← Students
-          </Link>
         </div>
       </div>
 
@@ -102,6 +97,11 @@ function AdminTeachers() {
         </div>
       )}
 
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-sm font-semibold text-[var(--sea-ink-soft)]">
+          {filtered.length} of {teachers.length} Teachers
+        </span>
+      </div>
       <div className="island-shell overflow-hidden rounded-2xl">
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -113,15 +113,15 @@ function AdminTeachers() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="min-w-[750px] w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--line)] bg-[var(--island-bg)]">
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">ID</th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">Name</th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">Email</th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">Department</th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">Joined</th>
-                  <th className="px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">Actions</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">ID</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">Name</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">Email</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">Department</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">Joined</th>
+                  <th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-[var(--sea-ink-soft)]">Actions</th>
                 </tr>
               </thead>
               <tbody>

@@ -39,14 +39,6 @@ function App() {
           >
             {dashboardLabel}
           </Link>
-          {!user && (
-            <Link
-              to="/login"
-              className="rounded-full border border-[rgba(23,58,64,0.2)] bg-white/50 px-5 py-2.5 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5 hover:border-[rgba(23,58,64,0.35)]"
-            >
-              Sign In
-            </Link>
-          )}
           {user && (
             <Link
               to="/simulator"

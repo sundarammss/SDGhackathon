@@ -26,6 +26,8 @@
   --link-bg-hover: rgba(255, 255, 255, 0.9);
   --hero-a: rgba(79, 184, 178, 0.36);
   --hero-b: rgba(47, 106, 74, 0.2);
+  --island-bg: rgba(255, 255, 255, 0.85);
+  --progress-track: rgba(23, 58, 64, 0.12);
 }
 
 :root[data-theme="dark"] {
@@ -48,6 +50,8 @@
   --link-bg-hover: rgba(24, 44, 49, 0.8);
   --hero-a: rgba(96, 215, 207, 0.18);
   --hero-b: rgba(110, 200, 154, 0.12);
+  --island-bg: rgba(10, 20, 24, 0.9);
+  --progress-track: rgba(141, 229, 219, 0.15);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -71,6 +75,8 @@
     --link-bg-hover: rgba(24, 44, 49, 0.8);
     --hero-a: rgba(96, 215, 207, 0.18);
     --hero-b: rgba(110, 200, 154, 0.12);
+    --island-bg: rgba(10, 20, 24, 0.9);
+    --progress-track: rgba(141, 229, 219, 0.15);
   }
 }
 

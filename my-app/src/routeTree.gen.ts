@@ -11,10 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SimulatorRouteImport } from './routes/simulator'
 import { Route as QuizzesRouteImport } from './routes/quizzes'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PeersRouteImport } from './routes/peers'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForumRouteImport } from './routes/forum'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminTeachersRouteImport } from './routes/admin/teachers'
@@ -30,6 +32,11 @@ const SimulatorRoute = SimulatorRouteImport.update({
 const QuizzesRoute = QuizzesRouteImport.update({
   id: '/quizzes',
   path: '/quizzes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PeersRoute = PeersRouteImport.update({
@@ -50,6 +57,11 @@ const ForumRoute = ForumRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -86,10 +98,12 @@ const AdminStudentsStudentIdRoute = AdminStudentsStudentIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/chat': typeof ChatRoute
   '/dashboard': typeof DashboardRoute
   '/forum': typeof ForumRoute
   '/login': typeof LoginRoute
   '/peers': typeof PeersRoute
+  '/portal': typeof PortalRoute
   '/quizzes': typeof QuizzesRoute
   '/simulator': typeof SimulatorRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -100,10 +114,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/chat': typeof ChatRoute
   '/dashboard': typeof DashboardRoute
   '/forum': typeof ForumRoute
   '/login': typeof LoginRoute
   '/peers': typeof PeersRoute
+  '/portal': typeof PortalRoute
   '/quizzes': typeof QuizzesRoute
   '/simulator': typeof SimulatorRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -115,10 +131,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/chat': typeof ChatRoute
   '/dashboard': typeof DashboardRoute
   '/forum': typeof ForumRoute
   '/login': typeof LoginRoute
   '/peers': typeof PeersRoute
+  '/portal': typeof PortalRoute
   '/quizzes': typeof QuizzesRoute
   '/simulator': typeof SimulatorRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -131,10 +149,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/chat'
     | '/dashboard'
     | '/forum'
     | '/login'
     | '/peers'
+    | '/portal'
     | '/quizzes'
     | '/simulator'
     | '/admin/dashboard'
@@ -145,10 +165,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/chat'
     | '/dashboard'
     | '/forum'
     | '/login'
     | '/peers'
+    | '/portal'
     | '/quizzes'
     | '/simulator'
     | '/admin/dashboard'
@@ -159,10 +181,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/chat'
     | '/dashboard'
     | '/forum'
     | '/login'
     | '/peers'
+    | '/portal'
     | '/quizzes'
     | '/simulator'
     | '/admin/dashboard'
@@ -174,10 +198,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  ChatRoute: typeof ChatRoute
   DashboardRoute: typeof DashboardRoute
   ForumRoute: typeof ForumRoute
   LoginRoute: typeof LoginRoute
   PeersRoute: typeof PeersRoute
+  PortalRoute: typeof PortalRoute
   QuizzesRoute: typeof QuizzesRoute
   SimulatorRoute: typeof SimulatorRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
@@ -199,6 +225,13 @@ declare module '@tanstack/react-router' {
       path: '/quizzes'
       fullPath: '/quizzes'
       preLoaderRoute: typeof QuizzesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/peers': {
@@ -227,6 +260,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -289,10 +329,12 @@ const AdminTeachersRouteWithChildren = AdminTeachersRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  ChatRoute: ChatRoute,
   DashboardRoute: DashboardRoute,
   ForumRoute: ForumRoute,
   LoginRoute: LoginRoute,
   PeersRoute: PeersRoute,
+  PortalRoute: PortalRoute,
   QuizzesRoute: QuizzesRoute,
   SimulatorRoute: SimulatorRoute,
   AdminDashboardRoute: AdminDashboardRoute,

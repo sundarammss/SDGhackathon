@@ -44,6 +44,17 @@ class InterventionType(str, enum.Enum):
     ADVISOR_MEETING = "advisor_meeting"
 
 
+class PeerRequestStatus(str, enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
+class AttendanceStatus(str, enum.Enum):
+    PRESENT = "present"
+    ABSENT = "absent"
+
+
 # ── Models ─────────────────────────────────────────────────────────────
 
 class Student(Base):
@@ -288,3 +299,89 @@ class QuizAnswer(Base):
     attempt = relationship("QuizAttempt", back_populates="answers")
     question = relationship("QuizQuestion")
     selected_option = relationship("QuizOption")
+
+
+# ── Peer Requests ──────────────────────────────────────────────────────
+
+class PeerRequest(Base):
+    __tablename__ = "peer_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    from_student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    to_student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    status = Column(Enum(PeerRequestStatus), default=PeerRequestStatus.PENDING, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+    from_student = relationship("Student", foreign_keys=[from_student_id])
+    to_student = relationship("Student", foreign_keys=[to_student_id])
+
+
+# ── Chat ───────────────────────────────────────────────────────────────
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_a_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    student_b_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    student_a = relationship("Student", foreign_keys=[student_a_id])
+    student_b = relationship("Student", foreign_keys=[student_b_id])
+    messages = relationship("ChatMessage", back_populates="conversation", cascade="all, delete-orphan", order_by="ChatMessage.created_at")
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
+    sender_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    body = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    conversation = relationship("Conversation", back_populates="messages")
+    sender = relationship("Student", foreign_keys=[sender_id])
+
+
+class PeerBlock(Base):
+    __tablename__ = "peer_blocks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    blocker_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    blocked_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    blocker = relationship("Student", foreign_keys=[blocker_id])
+    blocked = relationship("Student", foreign_keys=[blocked_id])
+
+
+class ExamMark(Base):
+    __tablename__ = "exam_marks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    exam_name = Column(String(255), nullable=False)
+    marks = Column(Float, nullable=False)
+    exam_date = Column(String(20), nullable=False)  # stored as ISO date string YYYY-MM-DD
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    student = relationship("Student", foreign_keys=[student_id])
+
+
+# ── Attendance ─────────────────────────────────────────────────────────
+
+class Attendance(Base):
+    __tablename__ = "attendance"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=False)
+    date = Column(String(10), nullable=False)      # YYYY-MM-DD
+    status = Column(Enum(AttendanceStatus), default=AttendanceStatus.PRESENT, nullable=False)
+    subject = Column(String(255), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    student = relationship("Student", foreign_keys=[student_id])
+    teacher = relationship("Teacher", foreign_keys=[teacher_id])
