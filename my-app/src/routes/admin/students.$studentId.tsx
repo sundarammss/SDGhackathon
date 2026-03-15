@@ -18,6 +18,7 @@ interface StudentDetail {
   section: string | null;
   batch_start_year: number | null;
   batch_end_year: number | null;
+  leetcode_id: string | null;
   created_at: string;
 }
 
@@ -67,8 +68,7 @@ function AdminStudentProfile() {
     department: "",
     section: "",
     batch_start_year: null,
-    batch_end_year: null,
-  });
+    batch_end_year: null,    leetcode_id: null,  });
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -93,6 +93,7 @@ function AdminStudentProfile() {
           section: data.section ?? "",
           batch_start_year: data.batch_start_year,
           batch_end_year: data.batch_end_year,
+          leetcode_id: data.leetcode_id ?? "",
         });
       })
       .catch(() => setError("Failed to load student."))
@@ -126,6 +127,7 @@ function AdminStudentProfile() {
           section: form.section?.trim() || null,
           batch_start_year: form.batch_start_year || null,
           batch_end_year: form.batch_end_year || null,
+          leetcode_id: (form.leetcode_id as string)?.trim() || null,
         }
       );
       setStudent(data);
@@ -288,6 +290,13 @@ function AdminStudentProfile() {
                   disabled={!editMode}
                 />
               </div>
+              <Field
+                label="LeetCode ID"
+                name="leetcode_id"
+                value={(form.leetcode_id as string) ?? ""}
+                onChange={(v) => setForm((f) => ({ ...f, leetcode_id: v }))}
+                disabled={!editMode}
+              />
             </div>
 
             {editMode && (
@@ -318,6 +327,7 @@ function AdminStudentProfile() {
                       section: student.section ?? "",
                       batch_start_year: student.batch_start_year ?? null,
                       batch_end_year: student.batch_end_year ?? null,
+                      leetcode_id: student.leetcode_id ?? "",
                     });
                   }}
                   className="rounded-xl border border-[var(--line)] px-5 py-2.5 text-sm font-medium text-[var(--sea-ink)] transition hover:bg-[var(--island-bg)]"

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 # ── Student ────────────────────────────────────────────────────────────
@@ -17,6 +17,15 @@ class StudentCreate(BaseModel):
     section: str | None = None
     batch_start_year: int | None = None
     batch_end_year: int | None = None
+    leetcode_id: str | None = None
+
+    @field_validator("leetcode_id", mode="before")
+    @classmethod
+    def _strip_leetcode_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        stripped = str(v).strip()
+        return stripped if stripped else None
 
 
 class StudentOut(BaseModel):
@@ -29,6 +38,7 @@ class StudentOut(BaseModel):
     section: str | None
     batch_start_year: int | None
     batch_end_year: int | None
+    leetcode_id: str | None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -43,9 +53,26 @@ class StudentUpdate(BaseModel):
     section: str | None = None
     batch_start_year: int | None = None
     batch_end_year: int | None = None
+    leetcode_id: str | None = None
+
+    @field_validator("leetcode_id", mode="before")
+    @classmethod
+    def _strip_leetcode_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        stripped = str(v).strip()
+        return stripped if stripped else None
 
 
 # ── Teacher ────────────────────────────────────────────────────────────
+
+class TeacherCreate(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    department: str | None = None
+    password: str
+
 
 class TeacherOut(BaseModel):
     id: int
@@ -190,6 +217,13 @@ class DashboardSummary(BaseModel):
     course_heatmap: list[CourseDifficultyRow]
 
 
+class StudyStreakOut(BaseModel):
+    student_id: int
+    current_streak: int
+    longest_streak: int
+    last_activity_date: str | None = None
+
+
 # ── Intervention ──────────────────────────────────────────────────────
 
 class InterventionOut(BaseModel):
@@ -316,3 +350,63 @@ class QuizAttemptOut(BaseModel):
     correct_answers: int
     completed_at: datetime | None
     model_config = {"from_attributes": True}
+
+
+# ── Study Resources ────────────────────────────────────────────────────
+
+class StudyResourceUploadOut(BaseModel):
+    resource_id: int
+    upload_status: str
+
+
+class StudyResourceOut(BaseModel):
+    id: int
+    title: str
+    subject: str
+    description: str | None
+    tags: list[str] = []
+    teacher_id: int
+    teacher_name: str | None = None
+    file_type: str
+    file_url: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class StudyResourceSearchOut(BaseModel):
+    resource_id: int
+    title: str
+    subject: str
+    description: str | None
+    file_url: str
+    similarity_score: float
+    file_type: str | None = None
+    source: str = "resource"
+    video_id: str | None = None
+    timestamp: int | None = None
+
+
+class YouTubeImportRequest(BaseModel):
+    url: str
+    subject: str
+
+
+class YouTubeVideoImportOut(BaseModel):
+    video_id: str
+    title: str
+    chunks_indexed: int
+    url: str
+
+
+class YouTubeImportOut(BaseModel):
+    requested_url: str
+    total_videos: int
+    indexed_videos: int
+    failed_videos: int
+    processed: list[YouTubeVideoImportOut]
+    errors: list[dict[str, str]]
+    task_id: str | None = None
+    task_ids: list[str] | None = None
+    queued_videos: int | None = None
+    status: str | None = None

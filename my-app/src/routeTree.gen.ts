@@ -9,13 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SimulatorRouteImport } from './routes/simulator'
+import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as QuizzesRouteImport } from './routes/quizzes'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PeersRouteImport } from './routes/peers'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForumRouteImport } from './routes/forum'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CompetitionsRouteImport } from './routes/competitions'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -24,9 +27,19 @@ import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminTeachersTeacherIdRouteImport } from './routes/admin/teachers.$teacherId'
 import { Route as AdminStudentsStudentIdRouteImport } from './routes/admin/students.$studentId'
 
+const TasksRoute = TasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SimulatorRoute = SimulatorRouteImport.update({
   id: '/simulator',
   path: '/simulator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QuizzesRoute = QuizzesRouteImport.update({
@@ -57,6 +70,11 @@ const ForumRoute = ForumRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompetitionsRoute = CompetitionsRouteImport.update({
+  id: '/competitions',
+  path: '/competitions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -99,13 +117,16 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/chat': typeof ChatRoute
+  '/competitions': typeof CompetitionsRoute
   '/dashboard': typeof DashboardRoute
   '/forum': typeof ForumRoute
   '/login': typeof LoginRoute
   '/peers': typeof PeersRoute
   '/portal': typeof PortalRoute
   '/quizzes': typeof QuizzesRoute
+  '/resources': typeof ResourcesRoute
   '/simulator': typeof SimulatorRoute
+  '/tasks': typeof TasksRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/teachers': typeof AdminTeachersRouteWithChildren
   '/admin/students/$studentId': typeof AdminStudentsStudentIdRoute
@@ -115,13 +136,16 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/chat': typeof ChatRoute
+  '/competitions': typeof CompetitionsRoute
   '/dashboard': typeof DashboardRoute
   '/forum': typeof ForumRoute
   '/login': typeof LoginRoute
   '/peers': typeof PeersRoute
   '/portal': typeof PortalRoute
   '/quizzes': typeof QuizzesRoute
+  '/resources': typeof ResourcesRoute
   '/simulator': typeof SimulatorRoute
+  '/tasks': typeof TasksRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/teachers': typeof AdminTeachersRouteWithChildren
   '/admin/students/$studentId': typeof AdminStudentsStudentIdRoute
@@ -132,13 +156,16 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/chat': typeof ChatRoute
+  '/competitions': typeof CompetitionsRoute
   '/dashboard': typeof DashboardRoute
   '/forum': typeof ForumRoute
   '/login': typeof LoginRoute
   '/peers': typeof PeersRoute
   '/portal': typeof PortalRoute
   '/quizzes': typeof QuizzesRoute
+  '/resources': typeof ResourcesRoute
   '/simulator': typeof SimulatorRoute
+  '/tasks': typeof TasksRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/teachers': typeof AdminTeachersRouteWithChildren
   '/admin/students/$studentId': typeof AdminStudentsStudentIdRoute
@@ -150,13 +177,16 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/chat'
+    | '/competitions'
     | '/dashboard'
     | '/forum'
     | '/login'
     | '/peers'
     | '/portal'
     | '/quizzes'
+    | '/resources'
     | '/simulator'
+    | '/tasks'
     | '/admin/dashboard'
     | '/admin/teachers'
     | '/admin/students/$studentId'
@@ -166,13 +196,16 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/chat'
+    | '/competitions'
     | '/dashboard'
     | '/forum'
     | '/login'
     | '/peers'
     | '/portal'
     | '/quizzes'
+    | '/resources'
     | '/simulator'
+    | '/tasks'
     | '/admin/dashboard'
     | '/admin/teachers'
     | '/admin/students/$studentId'
@@ -182,13 +215,16 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/chat'
+    | '/competitions'
     | '/dashboard'
     | '/forum'
     | '/login'
     | '/peers'
     | '/portal'
     | '/quizzes'
+    | '/resources'
     | '/simulator'
+    | '/tasks'
     | '/admin/dashboard'
     | '/admin/teachers'
     | '/admin/students/$studentId'
@@ -199,13 +235,16 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   ChatRoute: typeof ChatRoute
+  CompetitionsRoute: typeof CompetitionsRoute
   DashboardRoute: typeof DashboardRoute
   ForumRoute: typeof ForumRoute
   LoginRoute: typeof LoginRoute
   PeersRoute: typeof PeersRoute
   PortalRoute: typeof PortalRoute
   QuizzesRoute: typeof QuizzesRoute
+  ResourcesRoute: typeof ResourcesRoute
   SimulatorRoute: typeof SimulatorRoute
+  TasksRoute: typeof TasksRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminTeachersRoute: typeof AdminTeachersRouteWithChildren
   AdminStudentsStudentIdRoute: typeof AdminStudentsStudentIdRoute
@@ -213,11 +252,25 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tasks': {
+      id: '/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/simulator': {
       id: '/simulator'
       path: '/simulator'
       fullPath: '/simulator'
       preLoaderRoute: typeof SimulatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/quizzes': {
@@ -260,6 +313,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/competitions': {
+      id: '/competitions'
+      path: '/competitions'
+      fullPath: '/competitions'
+      preLoaderRoute: typeof CompetitionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -330,13 +390,16 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ChatRoute: ChatRoute,
+  CompetitionsRoute: CompetitionsRoute,
   DashboardRoute: DashboardRoute,
   ForumRoute: ForumRoute,
   LoginRoute: LoginRoute,
   PeersRoute: PeersRoute,
   PortalRoute: PortalRoute,
   QuizzesRoute: QuizzesRoute,
+  ResourcesRoute: ResourcesRoute,
   SimulatorRoute: SimulatorRoute,
+  TasksRoute: TasksRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminTeachersRoute: AdminTeachersRouteWithChildren,
   AdminStudentsStudentIdRoute: AdminStudentsStudentIdRoute,

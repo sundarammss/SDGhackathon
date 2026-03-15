@@ -15,6 +15,9 @@ from app.routers import auth, students, courses, dashboard, intelligence, quiz, 
 from app.routers import chat
 from app.routers import exam_marks
 from app.routers import attendance
+from app.routers import competitions
+from app.routers import assignments
+from app.routers import resources
 
 
 @asynccontextmanager
@@ -61,6 +64,9 @@ app.include_router(teachers.router)
 app.include_router(chat.router)
 app.include_router(exam_marks.router)
 app.include_router(attendance.router)
+app.include_router(competitions.router)
+app.include_router(assignments.router)
+app.include_router(resources.router)
 
 
 # ── Health check ───────────────────────────────────────────────────────

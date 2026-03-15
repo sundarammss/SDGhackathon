@@ -69,6 +69,13 @@ export interface DashboardSummary {
   course_heatmap: CourseDifficultyRow[];
 }
 
+export interface StudyStreakOut {
+  student_id: number;
+  current_streak: number;
+  longest_streak: number;
+  last_activity_date: string | null;
+}
+
 export interface WhatIfRequest {
   attendance_change_pct: number;
   study_hours_change: number;
@@ -102,6 +109,11 @@ export interface StudentOut {
 
 export const fetchDashboardSummary = async (): Promise<DashboardSummary> => {
   const { data } = await api.get("/api/v1/dashboard/summary");
+  return data;
+};
+
+export const fetchMyStudyStreak = async (): Promise<StudyStreakOut> => {
+  const { data } = await api.get("/api/v1/dashboard/my-streak");
   return data;
 };
 
@@ -466,13 +478,19 @@ export interface ExamMarkUpdate {
 
 // ── Exam Marks API ───────────────────────────────────────────────────
 
-export const fetchExamMarks = async (
-  studentId?: number,
-  examName?: string
-): Promise<ExamMarkOut[]> => {
+export const fetchExamMarks = async (opts?: {
+  studentId?: number;
+  examName?: string;
+  batchStartYear?: number;
+  batchEndYear?: number;
+  section?: string | null;
+}): Promise<ExamMarkOut[]> => {
   const params: Record<string, string | number> = {};
-  if (studentId !== undefined) params.student_id = studentId;
-  if (examName !== undefined) params.exam_name = examName;
+  if (opts?.studentId !== undefined) params.student_id = opts.studentId;
+  if (opts?.examName !== undefined) params.exam_name = opts.examName;
+  if (opts?.batchStartYear !== undefined) params.batch_start_year = opts.batchStartYear;
+  if (opts?.batchEndYear !== undefined) params.batch_end_year = opts.batchEndYear;
+  if (opts?.section) params.section = opts.section;
   const { data } = await api.get("/api/v1/exam-marks/", { params });
   return data;
 };
@@ -579,4 +597,258 @@ export const fetchAttendance = async (params: {
   if (params.section) p.section = params.section;
   const { data } = await api.get("/api/v1/attendance/", { params: p });
   return data;
+};
+
+// ── Competition Types ────────────────────────────────────────────────
+
+export interface CompetitionOut {
+  id: number;
+  student_id: number;
+  student_name: string;
+  competition_name: string;
+  competition_date: string;
+  status: "Winner" | "Runner-up" | "Participated";
+  proof_file: string | null;
+  approval_status: "Pending" | "Approved" | "Rejected";
+  approved_by: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Competition API ──────────────────────────────────────────────────
+
+export const fetchMyCompetitions = async (): Promise<CompetitionOut[]> => {
+  const { data } = await api.get("/api/v1/competitions/my");
+  return data;
+};
+
+export const fetchAllCompetitions = async (
+  approvalStatus?: string
+): Promise<CompetitionOut[]> => {
+  const params = approvalStatus ? { approval_status: approvalStatus } : {};
+  const { data } = await api.get("/api/v1/competitions/", { params });
+  return data;
+};
+
+export const submitCompetition = async (
+  formData: FormData
+): Promise<CompetitionOut> => {
+  // Do not set Content-Type manually — axios will set multipart/form-data with boundary
+  const { data } = await api.post("/api/v1/competitions/", formData, {
+    headers: { "Content-Type": undefined },
+  });
+  return data;
+};
+
+export const approveCompetition = async (
+  compId: number
+): Promise<CompetitionOut> => {
+  const { data } = await api.patch(`/api/v1/competitions/${compId}/approve`);
+  return data;
+};
+
+export const rejectCompetition = async (
+  compId: number
+): Promise<CompetitionOut> => {
+  const { data } = await api.patch(`/api/v1/competitions/${compId}/reject`);
+  return data;
+};
+
+export const fetchProofBlob = async (compId: number): Promise<Blob> => {
+  const { data } = await api.get(`/api/v1/competitions/${compId}/proof`, {
+    responseType: "blob",
+  });
+  return data;
+};
+
+// ── Assignment Types ─────────────────────────────────────────────────
+
+export interface AssignmentOut {
+  id: number;
+  title: string;
+  description: string | null;
+  due_date: string;
+  department: string;
+  batch_start_year: number;
+  batch_end_year: number;
+  section: string | null;
+  created_by: number;
+  creator_name: string | null;
+  submission_count: number;
+  created_at: string;
+}
+
+export interface AssignmentSubmissionOut {
+  id: number;
+  assignment_id: number;
+  assignment_title: string | null;
+  student_id: number;
+  student_name: string | null;
+  file_path: string;
+  submitted_at: string;
+  is_approved: boolean;
+}
+
+// ── Assignment API ───────────────────────────────────────────────────
+
+export const fetchAssignments = async (): Promise<AssignmentOut[]> => {
+  const { data } = await api.get("/api/v1/assignments/");
+  return data;
+};
+
+export const createAssignment = async (
+  formData: FormData
+): Promise<AssignmentOut> => {
+  const { data } = await api.post("/api/v1/assignments/", formData, {
+    headers: { "Content-Type": undefined },
+  });
+  return data;
+};
+
+export const deleteAssignment = async (assignmentId: number): Promise<void> => {
+  await api.delete(`/api/v1/assignments/${assignmentId}`);
+};
+
+export const submitAssignmentPdf = async (
+  assignmentId: number,
+  formData: FormData
+): Promise<AssignmentSubmissionOut> => {
+  const { data } = await api.post(
+    `/api/v1/assignments/${assignmentId}/submit`,
+    formData,
+    { headers: { "Content-Type": undefined } }
+  );
+  return data;
+};
+
+export const fetchMyAssignmentSubmission = async (
+  assignmentId: number
+): Promise<AssignmentSubmissionOut | null> => {
+  const { data } = await api.get(
+    `/api/v1/assignments/${assignmentId}/my-submission`
+  );
+  return data;
+};
+
+export const fetchAssignmentSubmissions = async (
+  assignmentId: number
+): Promise<AssignmentSubmissionOut[]> => {
+  const { data } = await api.get(
+    `/api/v1/assignments/${assignmentId}/submissions`
+  );
+  return data;
+};
+
+export const fetchSubmissionFile = async (
+  submissionId: number
+): Promise<Blob> => {
+  const { data } = await api.get(
+    `/api/v1/assignments/submissions/${submissionId}/file`,
+    { responseType: "blob" }
+  );
+  return data;
+};
+
+export const approveSubmission = async (
+  submissionId: number,
+  marks: number | null
+): Promise<AssignmentSubmissionOut> => {
+  const { data } = await api.patch(
+    `/api/v1/assignments/submissions/${submissionId}/approve`,
+    { marks }
+  );
+  return data;
+};
+
+// ── Study Resources Types ───────────────────────────────────────────
+
+export interface StudyResourceUploadOut {
+  resource_id: number;
+  upload_status: string;
+}
+
+export interface StudyResourceOut {
+  id: number;
+  title: string;
+  subject: string;
+  description: string | null;
+  tags: string[];
+  teacher_id: number;
+  teacher_name: string | null;
+  file_type: string;
+  file_url: string;
+  created_at: string;
+}
+
+export interface YouTubeImportOut {
+  requested_url: string;
+  total_videos: number;
+  indexed_videos: number;
+  failed_videos: number;
+  task_id?: string | null;
+  status?: string | null;
+}
+
+export interface StudyResourceSearchOut {
+  resource_id: number;
+  title: string;
+  subject: string;
+  description: string | null;
+  file_url: string;
+  similarity_score: number;
+  file_type?: string | null;
+  source?: "resource" | "youtube";
+  video_id?: string | null;
+  timestamp?: number | null;
+}
+
+// ── Study Resources API ─────────────────────────────────────────────
+
+export const uploadStudyResource = async (
+  formData: FormData
+): Promise<StudyResourceUploadOut> => {
+  const { data } = await api.post("/api/v1/resources/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+};
+
+export const fetchMyStudyResources = async (): Promise<StudyResourceOut[]> => {
+  const { data } = await api.get("/api/v1/resources/my");
+  return data;
+};
+
+export const fetchStudyResourcesBySubject = async (
+  subject: string
+): Promise<StudyResourceOut[]> => {
+  const { data } = await api.get(`/api/v1/resources/subject/${encodeURIComponent(subject)}`);
+  return data;
+};
+
+export const searchStudyResources = async (
+  q: string,
+  subject?: string
+): Promise<StudyResourceSearchOut[]> => {
+  const params: Record<string, string> = { q };
+  if (subject && subject !== "all") params.subject = subject;
+  const { data } = await api.get("/api/v1/resources/search", { params });
+  return data;
+};
+
+export const importYouTubeStudyResource = async (
+  payload: { url: string; subject: string }
+): Promise<YouTubeImportOut> => {
+  const { data } = await api.post("/api/v1/resources/youtube/import", payload);
+  return data;
+};
+
+export const downloadStudyResource = async (resourceId: number): Promise<Blob> => {
+  const { data } = await api.get(`/api/v1/resources/download/${resourceId}`, {
+    responseType: "blob",
+  });
+  return data;
+};
+
+export const deleteStudyResource = async (resourceId: number): Promise<void> => {
+  await api.delete(`/api/v1/resources/${resourceId}`);
 };

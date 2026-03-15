@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     Column,
+    Date,
     DateTime,
     Enum,
     Float,
@@ -55,6 +56,18 @@ class AttendanceStatus(str, enum.Enum):
     ABSENT = "absent"
 
 
+class CompetitionStatus(str, enum.Enum):
+    WINNER = "Winner"
+    RUNNER_UP = "Runner-up"
+    PARTICIPATED = "Participated"
+
+
+class ApprovalStatus(str, enum.Enum):
+    PENDING = "Pending"
+    APPROVED = "Approved"
+    REJECTED = "Rejected"
+
+
 # ── Models ─────────────────────────────────────────────────────────────
 
 class Student(Base):
@@ -70,6 +83,7 @@ class Student(Base):
     section = Column(String(60), nullable=True)
     batch_start_year = Column(Integer, nullable=True)
     batch_end_year = Column(Integer, nullable=True)
+    leetcode_id = Column(String(120), unique=True, nullable=True)
     created_at = Column(DateTime(timezone=True), default=_utcnow)
 
     enrollments = relationship("Enrollment", back_populates="student", cascade="all, delete-orphan")
@@ -78,6 +92,8 @@ class Student(Base):
     engagement_signals = relationship("EngagementSignal", back_populates="student", cascade="all, delete-orphan")
     risk_scores = relationship("RiskScore", back_populates="student", cascade="all, delete-orphan")
     interventions = relationship("Intervention", back_populates="student", cascade="all, delete-orphan")
+    competitions = relationship("StudentCompetition", back_populates="student", cascade="all, delete-orphan")
+    study_streak = relationship("StudyStreak", back_populates="student", uselist=False, cascade="all, delete-orphan")
 
 
 class Teacher(Base):
@@ -90,6 +106,9 @@ class Teacher(Base):
     password_hash = Column(String(255), nullable=False, default="")
     department = Column(String(120), nullable=True)
     created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    assignments = relationship("Assignment", back_populates="creator", cascade="all, delete-orphan")
+    study_resources = relationship("StudyResource", back_populates="teacher", cascade="all, delete-orphan")
 
 
 class Admin(Base):
@@ -385,3 +404,95 @@ class Attendance(Base):
 
     student = relationship("Student", foreign_keys=[student_id])
     teacher = relationship("Teacher", foreign_keys=[teacher_id])
+
+
+# ── Student Competitions ───────────────────────────────────────────────
+
+class StudentCompetition(Base):
+    __tablename__ = "student_competitions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    competition_name = Column(String(300), nullable=False)
+    competition_date = Column(String(20), nullable=False)  # YYYY-MM-DD
+    status = Column(Enum(CompetitionStatus), nullable=False)
+    proof_file = Column(String(500), nullable=True)  # stored UUID filename
+    approval_status = Column(Enum(ApprovalStatus), default=ApprovalStatus.PENDING, nullable=False)
+    approved_by = Column(Integer, ForeignKey("teachers.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+    student = relationship("Student", back_populates="competitions")
+    reviewer = relationship("Teacher", foreign_keys=[approved_by])
+
+
+# ── Assignments ────────────────────────────────────────────────────────
+
+class Assignment(Base):
+    __tablename__ = "assignments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(300), nullable=False)
+    description = Column(Text, nullable=True)
+    due_date = Column(String(20), nullable=False)           # YYYY-MM-DD
+    department = Column(String(120), nullable=False)
+    batch_start_year = Column(Integer, nullable=False)
+    batch_end_year = Column(Integer, nullable=False)
+    section = Column(String(60), nullable=True)             # None = all sections
+    created_by = Column(Integer, ForeignKey("teachers.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    creator = relationship("Teacher", back_populates="assignments")
+    submissions = relationship(
+        "AssignmentSubmission",
+        back_populates="assignment",
+        cascade="all, delete-orphan",
+    )
+
+
+class AssignmentSubmission(Base):
+    __tablename__ = "assignment_submissions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    assignment_id = Column(Integer, ForeignKey("assignments.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    file_path = Column(String(500), nullable=False)          # UUID-based filename
+    submitted_at = Column(DateTime(timezone=True), default=_utcnow)
+    is_approved = Column(Integer, default=0)                 # 0=pending, 1=approved
+    marks = Column(Float, nullable=True)                     # hidden from students
+
+    assignment = relationship("Assignment", back_populates="submissions")
+    student = relationship("Student")
+
+
+# ── Study Resources ────────────────────────────────────────────────────
+
+class StudyResource(Base):
+    __tablename__ = "study_resources"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(300), nullable=False)
+    subject = Column(String(120), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    tags = Column(String(500), nullable=True)
+    file_path = Column(String(500), nullable=False)
+    original_filename = Column(String(255), nullable=False)
+    file_type = Column(String(20), nullable=False)
+    teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    teacher = relationship("Teacher", back_populates="study_resources")
+
+
+class StudyStreak(Base):
+    __tablename__ = "study_streaks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False, unique=True, index=True)
+    current_streak = Column(Integer, default=0, nullable=False)
+    longest_streak = Column(Integer, default=0, nullable=False)
+    last_activity_date = Column(Date, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+
+    student = relationship("Student", back_populates="study_streak")

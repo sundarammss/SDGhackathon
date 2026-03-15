@@ -8,10 +8,33 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models import Teacher
-from app.schemas import TeacherOut, TeacherUpdate
+from app.schemas import TeacherCreate, TeacherOut, TeacherUpdate
 from app.rbac import require_role
+from app.security import hash_password
 
 router = APIRouter(prefix="/api/v1/teachers", tags=["Teachers"])
+
+
+@router.post("/", response_model=TeacherOut, status_code=status.HTTP_201_CREATED)
+async def create_teacher(
+    payload: TeacherCreate,
+    db: AsyncSession = Depends(get_db),
+    _role: dict = Depends(require_role("admin")),
+):
+    existing = await db.execute(select(Teacher).where(Teacher.email == payload.email))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    teacher = Teacher(
+        first_name=payload.first_name,
+        last_name=payload.last_name,
+        email=payload.email,
+        department=payload.department,
+        password_hash=hash_password(payload.password),
+    )
+    db.add(teacher)
+    await db.commit()
+    await db.refresh(teacher)
+    return teacher
 
 
 @router.get("/", response_model=list[TeacherOut])

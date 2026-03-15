@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Users, Search, Eye, Pencil, AlertCircle } from "lucide-react";
+import { Users, Search, Eye, Pencil, AlertCircle, Plus, X } from "lucide-react";
 import api from "../../lib/api";
 import { useAuthStore } from "../../lib/auth";
 
@@ -18,8 +18,28 @@ interface StudentRow {
   section: string | null;
   batch_start_year: number | null;
   batch_end_year: number | null;
+  leetcode_id: string | null;
   created_at: string;
 }
+
+const DEPARTMENTS = ["CSBS", "IT", "AIDS"];
+const SECTIONS: Record<string, string[]> = {
+  CSBS: [],
+  IT: ["A", "B"],
+  AIDS: ["A", "B"],
+};
+
+const emptyStudentForm = {
+  first_name: "",
+  last_name: "",
+  email: "",
+  phone: "",
+  department: "",
+  section: "",
+  batch_start_year: "",
+  batch_end_year: "",
+  leetcode_id: "",
+};
 
 function AdminDashboard() {
   const user = useAuthStore((s) => s.user);
@@ -29,6 +49,12 @@ function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  /* ── Add Student Modal ── */
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState(emptyStudentForm);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== "admin") {
@@ -58,6 +84,54 @@ function AdminDashboard() {
     );
   }, [search, students]);
 
+  function openModal() {
+    setForm(emptyStudentForm);
+    setFormError("");
+    setShowModal(true);
+  }
+
+  function handleFormChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const { name, value } = e.target;
+    setForm((f) => {
+      const updated = { ...f, [name]: value };
+      // reset section when department changes
+      if (name === "department") updated.section = "";
+      return updated;
+    });
+  }
+
+  async function handleAddStudent(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError("");
+    if (!form.first_name.trim() || !form.last_name.trim() || !form.email.trim()) {
+      setFormError("First name, last name, and email are required.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload: Record<string, unknown> = {
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim() || null,
+        department: form.department || null,
+        section: form.section || null,
+        batch_start_year: form.batch_start_year ? parseInt(form.batch_start_year) : null,
+        batch_end_year: form.batch_end_year ? parseInt(form.batch_end_year) : null,
+        leetcode_id: form.leetcode_id.trim() || null,
+      };
+      const { data } = await api.post<StudentRow>("/api/v1/students/", payload);
+      setStudents((prev) => [data, ...prev]);
+      setShowModal(false);
+    } catch (err: any) {
+      setFormError(err?.response?.data?.detail ?? "Failed to create student.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const sectionOptions = form.department ? SECTIONS[form.department] ?? [] : [];
+
   return (
     <main className="page-wrap px-4 pb-12 pt-10">
       {/* Header */}
@@ -75,6 +149,13 @@ function AdminDashboard() {
             </p>
           </div>
         </div>
+        <button
+          onClick={openModal}
+          className="flex items-center gap-2 rounded-xl bg-[rgba(245,158,11,0.12)] px-4 py-2 text-sm font-semibold text-[#f59e0b] transition hover:bg-[rgba(245,158,11,0.22)]"
+        >
+          <Plus className="h-4 w-4" />
+          Add Student
+        </button>
       </div>
 
       {/* Search */}
@@ -212,6 +293,80 @@ function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Add Student Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="island-shell w-full max-w-lg rounded-2xl p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-[var(--sea-ink)]">Add New Student</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="rounded-lg p-1.5 text-[var(--sea-ink-soft)] hover:bg-[var(--island-bg)] transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <form onSubmit={handleAddStudent} className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold uppercase tracking-wide text-[var(--sea-ink-soft)]">First Name *</label>
+                <input name="first_name" value={form.first_name} onChange={handleFormChange} placeholder="Alice" className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.4)]" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold uppercase tracking-wide text-[var(--sea-ink-soft)]">Last Name *</label>
+                <input name="last_name" value={form.last_name} onChange={handleFormChange} placeholder="Smith" className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.4)]" />
+              </div>
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-xs font-semibold uppercase tracking-wide text-[var(--sea-ink-soft)]">Email *</label>
+                <input type="email" name="email" value={form.email} onChange={handleFormChange} placeholder="alice@example.com" className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.4)]" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold uppercase tracking-wide text-[var(--sea-ink-soft)]">Phone</label>
+                <input name="phone" value={form.phone} onChange={handleFormChange} placeholder="+91 99999 00000" className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.4)]" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold uppercase tracking-wide text-[var(--sea-ink-soft)]">Department</label>
+                <select name="department" value={form.department} onChange={handleFormChange} className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.4)]">
+                  <option value="">Select…</option>
+                  {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              {sectionOptions.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-[var(--sea-ink-soft)]">Section</label>
+                  <select name="section" value={form.section} onChange={handleFormChange} className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.4)]">
+                    <option value="">Select…</option>
+                    {sectionOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              )}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold uppercase tracking-wide text-[var(--sea-ink-soft)]">Batch Start Year</label>
+                <input type="number" name="batch_start_year" value={form.batch_start_year} onChange={handleFormChange} placeholder="2023" className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.4)]" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold uppercase tracking-wide text-[var(--sea-ink-soft)]">Batch End Year</label>
+                <input type="number" name="batch_end_year" value={form.batch_end_year} onChange={handleFormChange} placeholder="2027" className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.4)]" />
+              </div>
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-xs font-semibold uppercase tracking-wide text-[var(--sea-ink-soft)]">LeetCode ID</label>
+                <input name="leetcode_id" value={form.leetcode_id} onChange={handleFormChange} placeholder="e.g. alice_codes" className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] px-3 py-2 text-sm text-[var(--sea-ink)] placeholder:text-[var(--sea-ink-soft)] focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.4)]" />
+              </div>
+              {formError && (
+                <p className="sm:col-span-2 text-sm text-red-600 dark:text-red-400">{formError}</p>
+              )}
+              <div className="sm:col-span-2 flex justify-end gap-2 pt-1">
+                <button type="button" onClick={() => setShowModal(false)} className="rounded-xl border border-[var(--line)] px-4 py-2 text-sm font-semibold text-[var(--sea-ink-soft)] hover:bg-[var(--island-bg)] transition">
+                  Cancel
+                </button>
+                <button type="submit" disabled={saving} className="rounded-xl bg-[rgba(245,158,11,0.12)] px-5 py-2 text-sm font-semibold text-[#f59e0b] hover:bg-[rgba(245,158,11,0.22)] transition disabled:opacity-50">
+                  {saving ? "Saving…" : "Add Student"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

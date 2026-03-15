@@ -1,4 +1,4 @@
-import { HeadContent, Scripts, createRootRoute, useLocation, useNavigate } from '@tanstack/react-router'
+import { HeadContent, Link, Scripts, createRootRoute, useLocation, useNavigate } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -35,7 +35,20 @@ export const Route = createRootRoute({
     ],
   }),
   shellComponent: RootDocument,
+  notFoundComponent: NotFoundPage,
 })
+
+function NotFoundPage() {
+  return (
+    <main className="mx-auto flex min-h-[40vh] max-w-3xl flex-col items-center justify-center px-6 py-16 text-center">
+      <h1 className="text-2xl font-bold">Page not found</h1>
+      <p className="mt-2 text-sm text-muted-foreground">The page you are looking for does not exist.</p>
+      <Link to="/" className="mt-6 inline-flex rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted">
+        Go to home
+      </Link>
+    </main>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
@@ -116,7 +129,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     <>
       <Header />
       {children}
-      <Footer />
+      {pathname === '/' && <Footer />}
     </>
   )
 }

@@ -12,6 +12,7 @@ from app.schemas import (
     CohortRiskRow,
     CourseDifficultyRow,
     DashboardSummary,
+    StudyStreakOut,
 )
 from app.ml_engine import (
     classify_burnout,
@@ -20,8 +21,23 @@ from app.ml_engine import (
     generate_shap_explanation,
 )
 from app.rbac import require_role
+from app.services.streak_service import get_student_streak
 
 router = APIRouter(prefix="/api/v1/dashboard", tags=["Dashboard"])
+
+
+@router.get("/my-streak", response_model=StudyStreakOut)
+async def my_streak(
+    auth: dict = Depends(require_role("student")),
+    db: AsyncSession = Depends(get_db),
+):
+    streak = await get_student_streak(db, auth["id"])
+    return StudyStreakOut(
+        student_id=streak.student_id,
+        current_streak=streak.current_streak,
+        longest_streak=streak.longest_streak,
+        last_activity_date=(streak.last_activity_date.isoformat() if streak.last_activity_date else None),
+    )
 
 
 @router.get("/summary", response_model=DashboardSummary)

@@ -13,6 +13,7 @@ from ..schemas import (
     QuizQuestionOutWithAnswer, QuizOptionOutWithAnswer,
 )
 from ..rbac import require_role
+from ..services.streak_service import mark_study_activity
 
 router = APIRouter(prefix="/api/v1/quiz", tags=["quiz"])
 
@@ -232,6 +233,7 @@ async def submit_quiz(
     db.add(attempt)
     await db.commit()
     await db.refresh(attempt)
+    await mark_study_activity(db, user["id"])
     student = await db.get(Student, user["id"])
     student_name = f"{student.first_name} {student.last_name}" if student else None
     return QuizAttemptOut(

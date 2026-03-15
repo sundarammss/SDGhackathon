@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import {
   fetchDashboardSummary,
+  fetchMyStudyStreak,
   fetchStudents,
   fetchRiskProfile,
   postWhatIf,
@@ -42,10 +43,38 @@ import {
   fetchAttendanceStudents,
   submitAttendance,
   fetchAttendance,
+  fetchMyCompetitions,
+  fetchAllCompetitions,
+  submitCompetition,
+  approveCompetition,
+  rejectCompetition,
+  fetchAssignments,
+  createAssignment,
+  deleteAssignment,
+  submitAssignmentPdf,
+  fetchMyAssignmentSubmission,
+  fetchAssignmentSubmissions,
+  fetchSubmissionFile,
+  approveSubmission,
+  uploadStudyResource,
+  fetchMyStudyResources,
+  fetchStudyResourcesBySubject,
+  searchStudyResources,
+  importYouTubeStudyResource,
+  deleteStudyResource,
+  downloadStudyResource,
+  type AssignmentOut,
+  type AssignmentSubmissionOut,
+  type StudyResourceUploadOut,
+  type YouTubeImportOut,
+  type StudyResourceOut,
+  type StudyResourceSearchOut,
+  type CompetitionOut,
   type ExamMarkOut,
   type ExamMarkCreate,
   type ExamMarkUpdate,
   type DashboardSummary,
+  type StudyStreakOut,
   type StudentOut,
   type RiskProfile,
   type WhatIfRequest,
@@ -77,6 +106,14 @@ export function useDashboardSummary(): UseQueryResult<DashboardSummary> {
     queryKey: ["dashboard", "summary"],
     queryFn: fetchDashboardSummary,
     staleTime: 30_000,
+  });
+}
+
+export function useMyStudyStreak(): UseQueryResult<StudyStreakOut> {
+  return useQuery({
+    queryKey: ["dashboard", "my-streak"],
+    queryFn: fetchMyStudyStreak,
+    staleTime: 10_000,
   });
 }
 
@@ -312,13 +349,16 @@ export function useBlockedPeers(): UseQueryResult<PeerBlockOut[]> {
 
 // ── Exam Marks Hooks ─────────────────────────────────────────────────
 
-export function useExamMarks(
-  studentId?: number,
-  examName?: string
-): UseQueryResult<ExamMarkOut[]> {
+export function useExamMarks(opts?: {
+  studentId?: number;
+  examName?: string;
+  batchStartYear?: number;
+  batchEndYear?: number;
+  section?: string | null;
+}): UseQueryResult<ExamMarkOut[]> {
   return useQuery({
-    queryKey: ["exam-marks", studentId, examName],
-    queryFn: () => fetchExamMarks(studentId, examName),
+    queryKey: ["exam-marks", opts?.studentId, opts?.examName, opts?.batchStartYear, opts?.batchEndYear, opts?.section],
+    queryFn: () => fetchExamMarks(opts),
     staleTime: 15_000,
   });
 }
@@ -391,3 +431,204 @@ export function useAttendance(params: {
     staleTime: 15_000,
   });
 }
+
+// ── Competition Hooks ────────────────────────────────────────────────
+
+export function useMyCompetitions(): UseQueryResult<CompetitionOut[]> {
+  return useQuery({
+    queryKey: ["competitions", "my"],
+    queryFn: fetchMyCompetitions,
+    staleTime: 15_000,
+  });
+}
+
+export function useAllCompetitions(
+  approvalStatus?: string
+): UseQueryResult<CompetitionOut[]> {
+  return useQuery({
+    queryKey: ["competitions", "all", approvalStatus],
+    queryFn: () => fetchAllCompetitions(approvalStatus),
+    staleTime: 15_000,
+  });
+}
+
+export function useSubmitCompetition(): UseMutationResult<
+  CompetitionOut,
+  Error,
+  FormData
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: submitCompetition,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["competitions"] });
+    },
+  });
+}
+
+export function useApproveCompetition(): UseMutationResult<
+  CompetitionOut,
+  Error,
+  number
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: approveCompetition,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["competitions"] });
+    },
+  });
+}
+
+export function useRejectCompetition(): UseMutationResult<
+  CompetitionOut,
+  Error,
+  number
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: rejectCompetition,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["competitions"] });
+    },
+  });
+}
+
+// ── Assignment Hooks ─────────────────────────────────────────────────
+
+export function useAssignments(): UseQueryResult<AssignmentOut[]> {
+  return useQuery({
+    queryKey: ["assignments"],
+    queryFn: fetchAssignments,
+    staleTime: 15_000,
+  });
+}
+
+export function useCreateAssignment(): UseMutationResult<AssignmentOut, Error, FormData> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: createAssignment,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["assignments"] }); },
+  });
+}
+
+export function useDeleteAssignment(): UseMutationResult<void, Error, number> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: deleteAssignment,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["assignments"] }); },
+  });
+}
+
+export function useSubmitAssignmentPdf(
+  assignmentId: number
+): UseMutationResult<AssignmentSubmissionOut, Error, FormData> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (fd) => submitAssignmentPdf(assignmentId, fd),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-assignment-submission", assignmentId] });
+      qc.invalidateQueries({ queryKey: ["assignments"] });
+    },
+  });
+}
+
+export function useMyAssignmentSubmission(
+  assignmentId: number | null
+): UseQueryResult<AssignmentSubmissionOut | null> {
+  return useQuery({
+    queryKey: ["my-assignment-submission", assignmentId],
+    queryFn: () => fetchMyAssignmentSubmission(assignmentId!),
+    enabled: assignmentId !== null,
+    staleTime: 15_000,
+  });
+}
+
+export function useAssignmentSubmissions(
+  assignmentId: number | null
+): UseQueryResult<AssignmentSubmissionOut[]> {
+  return useQuery({
+    queryKey: ["assignment-submissions", assignmentId],
+    queryFn: () => fetchAssignmentSubmissions(assignmentId!),
+    enabled: assignmentId !== null,
+    staleTime: 10_000,
+  });
+}
+
+export function useApproveSubmission(): UseMutationResult<
+  AssignmentSubmissionOut,
+  Error,
+  { submissionId: number; marks: number | null }
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ submissionId, marks }) => approveSubmission(submissionId, marks),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["assignment-submissions"] }); },
+  });
+}
+
+export { fetchSubmissionFile };
+export type { AssignmentOut, AssignmentSubmissionOut };
+
+// ── Study Resources Hooks ───────────────────────────────────────────
+
+export function useMyStudyResources(): UseQueryResult<StudyResourceOut[]> {
+  return useQuery({
+    queryKey: ["study-resources", "my"],
+    queryFn: fetchMyStudyResources,
+    staleTime: 10_000,
+  });
+}
+
+export function useStudyResourcesBySubject(subject: string): UseQueryResult<StudyResourceOut[]> {
+  return useQuery({
+    queryKey: ["study-resources", "subject", subject],
+    queryFn: () => fetchStudyResourcesBySubject(subject),
+    staleTime: 10_000,
+  });
+}
+
+export function useSemanticStudySearch(
+  query: string,
+  subject: string
+): UseQueryResult<StudyResourceSearchOut[]> {
+  return useQuery({
+    queryKey: ["study-resources", "search", query, subject],
+    queryFn: () => searchStudyResources(query, subject),
+    enabled: query.trim().length >= 2,
+    staleTime: 5_000,
+  });
+}
+
+export function useUploadStudyResource(): UseMutationResult<StudyResourceUploadOut, Error, FormData> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: uploadStudyResource,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["study-resources"] });
+    },
+  });
+}
+
+export function useDeleteStudyResource(): UseMutationResult<void, Error, number> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: deleteStudyResource,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["study-resources"] });
+    },
+  });
+}
+
+export function useImportYouTubeStudyResource(): UseMutationResult<YouTubeImportOut, Error, { url: string; subject?: string }> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: importYouTubeStudyResource,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["study-resources"] });
+    },
+  });
+}
+
+export { downloadStudyResource };
+export type { StudyResourceOut, StudyResourceSearchOut, StudyResourceUploadOut, YouTubeImportOut };

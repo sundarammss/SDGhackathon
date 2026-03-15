@@ -104,12 +104,32 @@ async def create_exam_mark(
 async def list_exam_marks(
     student_id: Optional[int] = None,
     exam_name: Optional[str] = None,
+    batch_start_year: Optional[int] = None,
+    batch_end_year: Optional[int] = None,
+    section: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     _auth: dict = Depends(require_role("advisor")),
 ):
+    # When batch filters are supplied, first collect matching student IDs
+    filtered_student_ids: Optional[set[int]] = None
+    if batch_start_year is not None or batch_end_year is not None or section is not None:
+        s_stmt = select(Student.id)
+        if batch_start_year is not None:
+            s_stmt = s_stmt.where(Student.batch_start_year == batch_start_year)
+        if batch_end_year is not None:
+            s_stmt = s_stmt.where(Student.batch_end_year == batch_end_year)
+        if section is not None:
+            s_stmt = s_stmt.where(Student.section == section)
+        s_result = await db.execute(s_stmt)
+        filtered_student_ids = {row for row in s_result.scalars().all()}
+
     stmt = select(ExamMark)
     if student_id is not None:
         stmt = stmt.where(ExamMark.student_id == student_id)
+    elif filtered_student_ids is not None:
+        if not filtered_student_ids:
+            return []
+        stmt = stmt.where(ExamMark.student_id.in_(filtered_student_ids))
     if exam_name is not None:
         stmt = stmt.where(ExamMark.exam_name.ilike(f"%{exam_name}%"))
     stmt = stmt.order_by(ExamMark.exam_date.desc(), ExamMark.id.desc())
