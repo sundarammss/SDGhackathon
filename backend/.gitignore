@@ -5,7 +5,23 @@ build/
 dist/
 wheels/
 *.egg-info
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Virtual environments
 .venv
 .env
+.env.*
+
+# Runtime / local data
+*.log
+celerybeat-schedule
+chroma_data/
+uploads/
+
+# Editor files
+.vscode/
+.idea/
