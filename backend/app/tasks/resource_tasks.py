@@ -121,13 +121,15 @@ def process_youtube_import_task(
 
     for video in videos:
         result = process_youtube_video_task.apply_async(
-            video={
-                "video_id": video.video_id,
-                "title": video.title,
-                "original_url": video.original_url,
+            kwargs={
+                "video": {
+                    "video_id": video.video_id,
+                    "title": video.title,
+                    "original_url": video.original_url,
+                },
+                "subject": subject,
+                "languages": languages,
             },
-            subject=subject,
-            languages=languages,
             queue=YOUTUBE_VIDEO_QUEUE,
         )
         task_ids.append(result.id)

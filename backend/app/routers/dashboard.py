@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Course, Enrollment, Student, Teacher
+from app.models import Course, Enrollment, Student, Teacher, CISScore
 from app.schemas import (
     CohortRiskRow,
     CourseDifficultyRow,
@@ -65,6 +65,15 @@ async def dashboard_summary(
         result = await db.execute(select(Student).order_by(Student.id))
     students = result.scalars().all()
 
+    student_ids = [s.id for s in students]
+    cis_scores = {}
+    if student_ids:
+        cis_result = await db.execute(
+            select(CISScore).where(CISScore.student_id.in_(student_ids))
+        )
+        for row in cis_result.scalars().all():
+            cis_scores[row.student_id] = row.score
+
     cohort_risks: list[CohortRiskRow] = []
     total_health = 0.0
     at_risk_count = 0
@@ -95,6 +104,7 @@ async def dashboard_summary(
             academic_health_score=health,
             burnout_category=burnout,
             top_risk_factor=top_factor,
+            cis_score=cis_scores.get(s.id),
         ))
 
     # Course heatmap

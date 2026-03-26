@@ -151,6 +151,7 @@ class RiskProfileOut(BaseModel):
     shap_explanation: list[ShapFeature]
     recommended_interventions: list[str]
     computed_at: datetime
+    cis_score: float | None = None
 
 
 # ── What-If Simulator ─────────────────────────────────────────────────
@@ -197,6 +198,7 @@ class CohortRiskRow(BaseModel):
     academic_health_score: float
     burnout_category: str
     top_risk_factor: str
+    cis_score: float | None = None
 
 
 class CourseDifficultyRow(BaseModel):

@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Brain,
   Activity,
+  Star,
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({ component: Dashboard });
@@ -129,6 +130,18 @@ const cohortColumns: ColumnDef<CohortRiskRow>[] = [
     accessorKey: "academic_health_score",
     header: "Health Score",
     cell: (info) => healthBar(info.getValue<number>()),
+  },
+  {
+    accessorKey: "cis_score",
+    header: "CIS Score",
+    cell: (info) => {
+      const v = info.getValue<number | null>();
+      return v != null ? (
+        <span className="font-bold text-[var(--sea-ink)]">{v.toFixed(1)}</span>
+      ) : (
+        <span className="text-sm text-[var(--sea-ink-soft)]">—</span>
+      );
+    },
   },
   {
     accessorKey: "burnout_category",
@@ -467,7 +480,14 @@ function StudentPersonalDashboard() {
       </section>
 
       {/* KPI Cards */}
-      <section className="mb-8 grid gap-4 sm:grid-cols-3">
+      <section className="mb-8 grid gap-4 sm:grid-cols-4">
+        <KPICard
+          icon={<Star className="h-5 w-5" />}
+          label="CIS Score"
+          value={data.cis_score != null ? Number(data.cis_score.toFixed(1)) : ("—" as any)}
+          color="text-indigo-600 dark:text-indigo-400"
+          bg="bg-indigo-50 dark:bg-indigo-900/30"
+        />
         <KPICard
           icon={<Activity className="h-5 w-5" />}
           label="Risk Score"

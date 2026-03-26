@@ -108,25 +108,34 @@ def _fetch_transcript_inner(video_id: str, languages: list[str] | None = None) -
         transcript = transcript_list.find_generated_transcript(preferred_languages)
         fetched = transcript.fetch()
         return fetched.to_raw_data() if hasattr(fetched, "to_raw_data") else fetched
-    except NoTranscriptFound as exc:
+    except NoTranscriptFound:
+        pass
+
+    try:
+        for transcript in transcript_list:
+            fetched = transcript.fetch()
+            return fetched.to_raw_data() if hasattr(fetched, "to_raw_data") else fetched
         raise YouTubeIngestError(
             f"No manual or generated transcript available for video {video_id}"
-        ) from exc
+        )
     except Exception as exc:
         raise YouTubeIngestError(
-            f"Generated transcript could not be fetched for video {video_id}: {exc}"
+            f"Transcript could not be fetched for video {video_id}: {exc}"
         ) from exc
 
 
 def fetch_transcript(video_id: str, languages: list[str] | None = None) -> list[dict[str, Any]]:
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(_fetch_transcript_inner, video_id, languages)
-        try:
-            return future.result(timeout=TRANSCRIPT_FETCH_TIMEOUT_SECONDS)
-        except FutureTimeoutError as exc:
-            raise YouTubeIngestError(
-                f"Transcript fetch timed out for video {video_id} after {TRANSCRIPT_FETCH_TIMEOUT_SECONDS}s"
-            ) from exc
+    executor = ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(_fetch_transcript_inner, video_id, languages)
+    try:
+        return future.result(timeout=TRANSCRIPT_FETCH_TIMEOUT_SECONDS)
+    except FutureTimeoutError as exc:
+        executor.shutdown(wait=False, cancel_futures=True)
+        raise YouTubeIngestError(
+            f"Transcript fetch timed out for video {video_id} after {TRANSCRIPT_FETCH_TIMEOUT_SECONDS}s"
+        ) from exc
+    finally:
+        executor.shutdown(wait=False)
 
 
 def chunk_transcript(

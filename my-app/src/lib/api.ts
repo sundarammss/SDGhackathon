@@ -37,6 +37,7 @@ export interface RiskProfile {
   shap_explanation: ShapFeature[];
   recommended_interventions: string[];
   computed_at: string;
+  cis_score?: number | null;
 }
 
 export interface CohortRiskRow {
@@ -49,6 +50,7 @@ export interface CohortRiskRow {
   academic_health_score: number;
   burnout_category: string;
   top_risk_factor: string;
+  cis_score?: number | null;
 }
 
 export interface CourseDifficultyRow {

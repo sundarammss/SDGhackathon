@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Intervention, RiskScore, Student
+from app.models import Intervention, RiskScore, Student, CISScore
 from app.schemas import (
     InterventionOut,
     PeerMatchResponse,
@@ -51,6 +51,11 @@ async def get_risk_profile(
     interventions = recommend_interventions(student_id)
     now = datetime.now(timezone.utc)
 
+    # Fetch CIS score
+    cis_result = await db.execute(select(CISScore).where(CISScore.student_id == student_id))
+    cis_score_row = cis_result.scalar_one_or_none()
+    cis_score_val = cis_score_row.score if cis_score_row else None
+
     # Persist the computed risk score
     score = RiskScore(
         student_id=student_id,
@@ -82,6 +87,7 @@ async def get_risk_profile(
         shap_explanation=shap,
         recommended_interventions=interventions,
         computed_at=now,
+        cis_score=cis_score_val,
     )
 
 
