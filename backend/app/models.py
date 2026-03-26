@@ -496,3 +496,45 @@ class StudyStreak(Base):
     updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 
     student = relationship("Student", back_populates="study_streak")
+
+
+# ── CIS ───────────────────────────────────────────────────────────────
+
+class ForumInteraction(Base):
+    __tablename__ = "forum_interactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    from_student_id = Column(Integer, nullable=False, index=True)
+    to_student_id = Column(Integer, nullable=False, index=True)
+    forum_post_id = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+
+class PeerChatInteraction(Base):
+    __tablename__ = "peer_chat_interactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    from_student_id = Column(Integer, nullable=False, index=True)
+    to_student_id = Column(Integer, nullable=False, index=True)
+    message_count = Column(Integer, default=1, nullable=False)
+    last_active = Column(DateTime(timezone=True), nullable=True)
+
+
+class AssignmentHelp(Base):
+    __tablename__ = "assignment_help"
+
+    id = Column(Integer, primary_key=True, index=True)
+    helper_student_id = Column(Integer, nullable=False, index=True)
+    helped_student_id = Column(Integer, nullable=False, index=True)
+    assignment_id = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+
+class CISScore(Base):
+    __tablename__ = "cis_scores"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, nullable=False, unique=True, index=True)
+    score = Column(Float, nullable=False)
+    label = Column(String(50), nullable=False)
+    computed_at = Column(DateTime(timezone=True), default=_utcnow)

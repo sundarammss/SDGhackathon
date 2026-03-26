@@ -19,8 +19,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.create_table(
+    bind = op.get_bind()
+    metadata = sa.MetaData()
+
+    study_resources = sa.Table(
         "study_resources",
+        metadata,
         sa.Column("id", sa.Integer(), primary_key=True, index=True),
         sa.Column("title", sa.String(length=300), nullable=False),
         sa.Column("subject", sa.String(length=120), nullable=False),
@@ -32,11 +36,22 @@ def upgrade() -> None:
         sa.Column("teacher_id", sa.Integer(), sa.ForeignKey("teachers.id"), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=True),
     )
-    op.create_index("ix_study_resources_subject", "study_resources", ["subject"], unique=False)
-    op.create_index("ix_study_resources_teacher_id", "study_resources", ["teacher_id"], unique=False)
+    study_resources.create(bind=bind, checkfirst=True)
+
+    sa.Index("ix_study_resources_subject", study_resources.c.subject).create(bind=bind, checkfirst=True)
+    sa.Index("ix_study_resources_teacher_id", study_resources.c.teacher_id).create(bind=bind, checkfirst=True)
 
 
 def downgrade() -> None:
-    op.drop_index("ix_study_resources_teacher_id", table_name="study_resources")
-    op.drop_index("ix_study_resources_subject", table_name="study_resources")
-    op.drop_table("study_resources")
+    bind = op.get_bind()
+    metadata = sa.MetaData()
+    study_resources = sa.Table(
+        "study_resources",
+        metadata,
+        sa.Column("subject", sa.String(length=120)),
+        sa.Column("teacher_id", sa.Integer()),
+    )
+
+    sa.Index("ix_study_resources_teacher_id", study_resources.c.teacher_id).drop(bind=bind, checkfirst=True)
+    sa.Index("ix_study_resources_subject", study_resources.c.subject).drop(bind=bind, checkfirst=True)
+    study_resources.drop(bind=bind, checkfirst=True)

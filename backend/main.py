@@ -18,6 +18,7 @@ from app.routers import attendance
 from app.routers import competitions
 from app.routers import assignments
 from app.routers import resources
+from app.routers import cis
 
 
 @asynccontextmanager
@@ -67,6 +68,7 @@ app.include_router(attendance.router)
 app.include_router(competitions.router)
 app.include_router(assignments.router)
 app.include_router(resources.router)
+app.include_router(cis.router)
 
 
 # ── Health check ───────────────────────────────────────────────────────
