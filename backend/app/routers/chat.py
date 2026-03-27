@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import uuid
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import select, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +16,12 @@ from app.models import PeerRequest, PeerRequestStatus, Conversation, ChatMessage
 from app.rbac import require_role
 
 router = APIRouter(tags=["Chat"])
+
+UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent / "uploads" / "chat"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+ALLOWED_CHAT_EXTENSIONS = {".pdf", ".docx", ".doc"}
+MAX_CHAT_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 # ── Schemas ────────────────────────────────────────────────────────────
@@ -58,6 +69,9 @@ class MessageOut(BaseModel):
     sender_id: int
     sender_name: str
     body: str
+    attachment_name: str | None = None
+    attachment_mime_type: str | None = None
+    has_attachment: bool = False
     created_at: str
 
     model_config = {"from_attributes": True}
@@ -69,6 +83,14 @@ class SendRequestIn(BaseModel):
 
 class SendMessageIn(BaseModel):
     body: str
+
+
+def _message_preview(message: ChatMessage) -> str | None:
+    if message.body and message.body.strip():
+        return message.body
+    if message.attachment_name:
+        return f"Sent an attachment: {message.attachment_name}"
+    return None
 
 
 # ── Peer Requests ──────────────────────────────────────────────────────
@@ -305,7 +327,7 @@ async def list_conversations(
     out = []
     for c in convs:
         other = c.student_b if c.student_a_id == caller_id else c.student_a
-        last_msg = c.messages[-1].body if c.messages else None
+        last_msg = _message_preview(c.messages[-1]) if c.messages else None
         _blocked_by_me = other.id in blocked_by_me_ids
         _blocked_me = other.id in blocked_me_ids
         out.append(
@@ -350,6 +372,9 @@ async def get_messages(
             sender_id=m.sender_id,
             sender_name=f"{m.sender.first_name} {m.sender.last_name}",
             body=m.body,
+            attachment_name=m.attachment_name,
+            attachment_mime_type=m.attachment_mime_type,
+            has_attachment=bool(m.attachment_path),
             created_at=m.created_at.isoformat(),
         )
         for m in messages
@@ -363,7 +388,6 @@ async def get_messages(
 )
 async def send_message(
     conv_id: int,
-    payload: SendMessageIn,
     request: Request,
     db: AsyncSession = Depends(get_db),
     _role: str = Depends(require_role("student")),
@@ -388,13 +412,52 @@ async def send_message(
     if block_check.scalar_one_or_none():
         raise HTTPException(status_code=403, detail="Cannot send message: user is blocked")
 
-    if not payload.body.strip():
+    content_type = (request.headers.get("content-type") or "").lower()
+    body_text = ""
+    upload: UploadFile | None = None
+
+    if content_type.startswith("application/json"):
+        data = await request.json()
+        body_text = str((data or {}).get("body", "")).strip()
+    else:
+        form = await request.form()
+        body_text = str(form.get("body", "")).strip()
+        candidate = form.get("attachment")
+        if candidate is not None and hasattr(candidate, "filename") and hasattr(candidate, "read"):
+            upload = candidate  # type: ignore[assignment]
+
+    if not body_text and upload is None:
         raise HTTPException(status_code=400, detail="Message body cannot be empty")
+
+    attachment_path: str | None = None
+    attachment_name: str | None = None
+    attachment_mime_type: str | None = None
+
+    if upload is not None:
+        original_filename = upload.filename or ""
+        suffix = Path(original_filename).suffix.lower()
+        if suffix not in ALLOWED_CHAT_EXTENSIONS:
+            raise HTTPException(status_code=400, detail="Only PDF, DOC, and DOCX files are allowed")
+
+        content = await upload.read()
+        if len(content) > MAX_CHAT_FILE_SIZE:
+            raise HTTPException(status_code=400, detail="File size must not exceed 10 MB")
+
+        filename = f"{uuid.uuid4().hex}{suffix}"
+        filepath = UPLOAD_DIR / filename
+        filepath.write_bytes(content)
+
+        attachment_path = filename
+        attachment_name = original_filename
+        attachment_mime_type = upload.content_type or None
 
     msg = ChatMessage(
         conversation_id=conv_id,
         sender_id=caller_id,
-        body=payload.body.strip(),
+        body=body_text,
+        attachment_path=attachment_path,
+        attachment_name=attachment_name,
+        attachment_mime_type=attachment_mime_type,
     )
     db.add(msg)
     await db.commit()
@@ -407,7 +470,47 @@ async def send_message(
         sender_id=msg.sender_id,
         sender_name=f"{sender.first_name} {sender.last_name}",
         body=msg.body,
+        attachment_name=msg.attachment_name,
+        attachment_mime_type=msg.attachment_mime_type,
+        has_attachment=bool(msg.attachment_path),
         created_at=msg.created_at.isoformat(),
+    )
+
+
+@router.get("/api/v1/conversations/{conv_id}/messages/{message_id}/attachment")
+async def download_chat_attachment(
+    conv_id: int,
+    message_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    _role: str = Depends(require_role("student")),
+):
+    caller_id = int(request.headers.get("x-user-id", "0"))
+    conv = await db.get(Conversation, conv_id)
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    if conv.student_a_id != caller_id and conv.student_b_id != caller_id:
+        raise HTTPException(status_code=403, detail="Not your conversation")
+
+    msg = await db.get(ChatMessage, message_id)
+    if not msg or msg.conversation_id != conv_id:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if not msg.attachment_path:
+        raise HTTPException(status_code=404, detail="No attachment for this message")
+
+    filepath = UPLOAD_DIR / msg.attachment_path
+    try:
+        filepath.resolve().relative_to(UPLOAD_DIR.resolve())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid file path")
+
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail="Attachment not found on server")
+
+    return FileResponse(
+        path=str(filepath),
+        filename=msg.attachment_name or filepath.name,
+        media_type=msg.attachment_mime_type or "application/octet-stream",
     )
 
 

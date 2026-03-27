@@ -109,6 +109,7 @@ class Teacher(Base):
 
     assignments = relationship("Assignment", back_populates="creator", cascade="all, delete-orphan")
     study_resources = relationship("StudyResource", back_populates="teacher", cascade="all, delete-orphan")
+    department_courses = relationship("DepartmentCourse", back_populates="creator", cascade="all, delete-orphan")
 
 
 class Admin(Base):
@@ -133,6 +134,40 @@ class Course(Base):
     created_at = Column(DateTime(timezone=True), default=_utcnow)
 
     enrollments = relationship("Enrollment", back_populates="course", cascade="all, delete-orphan")
+
+
+class DepartmentCourse(Base):
+    __tablename__ = "department_courses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(40), nullable=False)
+    title = Column(String(255), nullable=False)
+    department = Column(String(120), nullable=False, index=True)
+    semester = Column(Integer, nullable=False, index=True)
+    created_by = Column(Integer, ForeignKey("teachers.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    creator = relationship("Teacher", back_populates="department_courses")
+    unit_notes = relationship(
+        "DepartmentCourseUnit",
+        back_populates="course",
+        cascade="all, delete-orphan",
+        order_by="DepartmentCourseUnit.unit_number",
+    )
+
+
+class DepartmentCourseUnit(Base):
+    __tablename__ = "department_course_units"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("department_courses.id"), nullable=False, index=True)
+    unit_number = Column(Integer, nullable=False)
+    file_path = Column(String(500), nullable=False)
+    original_filename = Column(String(255), nullable=False)
+    mime_type = Column(String(120), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
+
+    course = relationship("DepartmentCourse", back_populates="unit_notes")
 
 
 class Enrollment(Base):
@@ -358,6 +393,9 @@ class ChatMessage(Base):
     conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
     sender_id = Column(Integer, ForeignKey("students.id"), nullable=False)
     body = Column(Text, nullable=False)
+    attachment_path = Column(String(500), nullable=True)
+    attachment_name = Column(String(255), nullable=True)
+    attachment_mime_type = Column(String(120), nullable=True)
     created_at = Column(DateTime(timezone=True), default=_utcnow)
 
     conversation = relationship("Conversation", back_populates="messages")
@@ -496,6 +534,17 @@ class StudyStreak(Base):
     updated_at = Column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 
     student = relationship("Student", back_populates="study_streak")
+
+
+class StudentNotificationSeen(Base):
+    __tablename__ = "student_notification_seen"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False, index=True)
+    notification_id = Column(String(120), nullable=False, index=True)
+    seen_at = Column(DateTime(timezone=True), default=_utcnow, nullable=False)
+
+    student = relationship("Student")
 
 
 # ── CIS ───────────────────────────────────────────────────────────────

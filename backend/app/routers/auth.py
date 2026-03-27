@@ -27,6 +27,7 @@ from app.models import (
     Quiz,
     Student,
     StudentCompetition,
+    StudentNotificationSeen,
     Teacher,
 )
 from app.security import verify_password, hash_password
@@ -60,6 +61,11 @@ class StudentNotificationOut(BaseModel):
     message: str
     created_at: str
     action_path: str
+    is_seen: bool = False
+
+
+class MarkNotificationsSeenRequest(BaseModel):
+    notification_ids: list[str]
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -274,12 +280,15 @@ async def get_student_notifications(
         sender_name = (
             f"{sender.first_name} {sender.last_name}" if sender else "A peer"
         )
+        preview = (msg.body or "").strip()
+        if not preview and getattr(msg, "attachment_name", None):
+            preview = f"sent an attachment: {msg.attachment_name}"
         notifications.append(
             StudentNotificationOut(
                 id=f"chat-{msg.id}",
                 event_type="chat_message",
                 title="New chat message",
-                message=f"{sender_name}: {msg.body[:80]}",
+                message=f"{sender_name}: {preview[:80]}",
                 created_at=msg.created_at.isoformat() if msg.created_at else "",
                 action_path="/chat",
             )
@@ -343,4 +352,55 @@ async def get_student_notifications(
         )
 
     notifications.sort(key=lambda n: n.created_at, reverse=True)
-    return notifications[:20]
+    notifications = notifications[:20]
+
+    if notifications:
+        ids = [n.id for n in notifications]
+        seen_stmt = select(StudentNotificationSeen.notification_id).where(
+            and_(
+                StudentNotificationSeen.student_id == student.id,
+                StudentNotificationSeen.notification_id.in_(ids),
+            )
+        )
+        seen_result = await db.execute(seen_stmt)
+        seen_ids = set(seen_result.scalars().all())
+        for n in notifications:
+            n.is_seen = n.id in seen_ids
+
+    return notifications
+
+
+@router.post("/student-notifications/mark-seen")
+async def mark_student_notifications_seen(
+    payload: MarkNotificationsSeenRequest,
+    db: AsyncSession = Depends(get_db),
+    auth: dict = Depends(require_role("student")),
+):
+    if not payload.notification_ids:
+        return {"marked": 0}
+
+    # Keep writes bounded and deduplicated.
+    ids = list(dict.fromkeys([n.strip() for n in payload.notification_ids if n and n.strip()]))[:200]
+    if not ids:
+        return {"marked": 0}
+
+    existing_stmt = select(StudentNotificationSeen.notification_id).where(
+        and_(
+            StudentNotificationSeen.student_id == auth["id"],
+            StudentNotificationSeen.notification_id.in_(ids),
+        )
+    )
+    existing_result = await db.execute(existing_stmt)
+    existing_ids = set(existing_result.scalars().all())
+
+    to_insert = [
+        StudentNotificationSeen(student_id=auth["id"], notification_id=nid)
+        for nid in ids
+        if nid not in existing_ids
+    ]
+
+    if to_insert:
+        db.add_all(to_insert)
+        await db.commit()
+
+    return {"marked": len(to_insert)}

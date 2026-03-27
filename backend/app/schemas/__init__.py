@@ -112,6 +112,27 @@ class CourseOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DepartmentCourseUnitOut(BaseModel):
+    unit_number: int
+    original_filename: str
+    mime_type: str | None = None
+    download_path: str
+
+
+class DepartmentCourseOut(BaseModel):
+    id: int
+    code: str
+    title: str
+    department: str
+    semester: int
+    created_by: int
+    creator_name: str | None = None
+    created_at: datetime
+    unit_notes: list[DepartmentCourseUnitOut]
+
+    model_config = {"from_attributes": True}
+
+
 # ── LMS Activity ──────────────────────────────────────────────────────
 
 class LMSActivityCreate(BaseModel):
