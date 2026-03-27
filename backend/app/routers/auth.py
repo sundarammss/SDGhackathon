@@ -11,11 +11,24 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Admin, Student, Teacher
+from app.models import (
+    Admin,
+    ApprovalStatus,
+    Assignment,
+    ChatMessage,
+    CompetitionStatus,
+    Conversation,
+    PeerRequest,
+    PeerRequestStatus,
+    Quiz,
+    Student,
+    StudentCompetition,
+    Teacher,
+)
 from app.security import verify_password, hash_password
 from app.rbac import require_role
 
@@ -38,6 +51,15 @@ class LoginResponse(BaseModel):
     cohort: str | None
 
     model_config = {"from_attributes": True}
+
+
+class StudentNotificationOut(BaseModel):
+    id: str
+    event_type: str
+    title: str
+    message: str
+    created_at: str
+    action_path: str
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -165,3 +187,160 @@ async def change_password(
     user.password_hash = hash_password(payload.new_password)
     await db.commit()
     return {"message": "Password updated successfully"}
+
+
+@router.get("/student-notifications", response_model=list[StudentNotificationOut])
+async def get_student_notifications(
+    db: AsyncSession = Depends(get_db),
+    auth: dict = Depends(require_role("student")),
+):
+    student = await db.get(Student, auth["id"])
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    notifications: list[StudentNotificationOut] = []
+
+    # Quizzes assigned to the student's department (or global quizzes).
+    quiz_stmt = (
+        select(Quiz)
+        .where(
+            or_(
+                Quiz.assigned_department.is_(None),
+                Quiz.assigned_department == student.department,
+            )
+        )
+        .order_by(Quiz.created_at.desc())
+        .limit(10)
+    )
+    quiz_result = await db.execute(quiz_stmt)
+    for quiz in quiz_result.scalars().all():
+        notifications.append(
+            StudentNotificationOut(
+                id=f"quiz-{quiz.id}",
+                event_type="quiz_assigned",
+                title="New quiz assigned",
+                message=f"{quiz.title}",
+                created_at=quiz.created_at.isoformat() if quiz.created_at else "",
+                action_path="/quizzes",
+            )
+        )
+
+    # Assignments matching the student's dept / batch / section targeting.
+    assignment_stmt = (
+        select(Assignment)
+        .where(
+            and_(
+                Assignment.department == student.department,
+                Assignment.batch_start_year == student.batch_start_year,
+                Assignment.batch_end_year == student.batch_end_year,
+                or_(Assignment.section.is_(None), Assignment.section == student.section),
+            )
+        )
+        .order_by(Assignment.created_at.desc())
+        .limit(10)
+    )
+    assignment_result = await db.execute(assignment_stmt)
+    for assignment in assignment_result.scalars().all():
+        notifications.append(
+            StudentNotificationOut(
+                id=f"assignment-{assignment.id}",
+                event_type="assignment_assigned",
+                title="New assignment assigned",
+                message=f"{assignment.title} (due {assignment.due_date})",
+                created_at=assignment.created_at.isoformat() if assignment.created_at else "",
+                action_path="/tasks",
+            )
+        )
+
+    # Incoming chat messages from peers.
+    message_stmt = (
+        select(ChatMessage)
+        .join(Conversation, ChatMessage.conversation_id == Conversation.id)
+        .where(
+            and_(
+                or_(
+                    Conversation.student_a_id == student.id,
+                    Conversation.student_b_id == student.id,
+                ),
+                ChatMessage.sender_id != student.id,
+            )
+        )
+        .order_by(ChatMessage.created_at.desc())
+        .limit(10)
+    )
+    message_result = await db.execute(message_stmt)
+    for msg in message_result.scalars().all():
+        sender = await db.get(Student, msg.sender_id)
+        sender_name = (
+            f"{sender.first_name} {sender.last_name}" if sender else "A peer"
+        )
+        notifications.append(
+            StudentNotificationOut(
+                id=f"chat-{msg.id}",
+                event_type="chat_message",
+                title="New chat message",
+                message=f"{sender_name}: {msg.body[:80]}",
+                created_at=msg.created_at.isoformat() if msg.created_at else "",
+                action_path="/chat",
+            )
+        )
+
+    # Pending incoming peer match requests.
+    peer_stmt = (
+        select(PeerRequest)
+        .where(
+            and_(
+                PeerRequest.to_student_id == student.id,
+                PeerRequest.status == PeerRequestStatus.PENDING,
+            )
+        )
+        .order_by(PeerRequest.created_at.desc())
+        .limit(10)
+    )
+    peer_result = await db.execute(peer_stmt)
+    for req in peer_result.scalars().all():
+        sender = await db.get(Student, req.from_student_id)
+        sender_name = (
+            f"{sender.first_name} {sender.last_name}" if sender else "A student"
+        )
+        notifications.append(
+            StudentNotificationOut(
+                id=f"peer-{req.id}",
+                event_type="peer_request",
+                title="Peer match request",
+                message=f"{sender_name} sent you a peer matching request",
+                created_at=req.created_at.isoformat() if req.created_at else "",
+                action_path="/peers",
+            )
+        )
+
+    # Staff-approved competition requests.
+    comp_stmt = (
+        select(StudentCompetition)
+        .where(
+            and_(
+                StudentCompetition.student_id == student.id,
+                StudentCompetition.approval_status == ApprovalStatus.APPROVED,
+            )
+        )
+        .order_by(StudentCompetition.updated_at.desc())
+        .limit(10)
+    )
+    comp_result = await db.execute(comp_stmt)
+    for comp in comp_result.scalars().all():
+        notifications.append(
+            StudentNotificationOut(
+                id=f"competition-{comp.id}",
+                event_type="competition_approved",
+                title="Competition request accepted",
+                message=(
+                    f"Your competition submission '{comp.competition_name}' "
+                    f"({CompetitionStatus(comp.status).value}) was accepted"
+                ),
+                created_at=comp.updated_at.isoformat() if comp.updated_at else "",
+                action_path="/competitions",
+            )
+        )
+
+    notifications.sort(key=lambda n: n.created_at, reverse=True)
+    return notifications[:20]

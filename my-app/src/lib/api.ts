@@ -107,6 +107,21 @@ export interface StudentOut {
   created_at: string;
 }
 
+export interface StudentNotificationOut {
+  id: string;
+  event_type:
+    | "quiz_assigned"
+    | "assignment_assigned"
+    | "chat_message"
+    | "peer_request"
+    | "competition_approved"
+    | string;
+  title: string;
+  message: string;
+  created_at: string;
+  action_path: string;
+}
+
 // ── API Functions ────────────────────────────────────────────────────
 
 export const fetchDashboardSummary = async (): Promise<DashboardSummary> => {
@@ -121,6 +136,13 @@ export const fetchMyStudyStreak = async (): Promise<StudyStreakOut> => {
 
 export const fetchStudents = async (): Promise<StudentOut[]> => {
   const { data } = await api.get("/api/v1/students/");
+  return data;
+};
+
+export const fetchStudentNotifications = async (): Promise<
+  StudentNotificationOut[]
+> => {
+  const { data } = await api.get("/api/v1/auth/student-notifications");
   return data;
 };
 

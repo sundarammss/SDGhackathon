@@ -9,9 +9,9 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { useDashboardSummary, useRiskProfile } from "../lib/hooks";
+import { useDashboardSummary, useRiskProfile, useStudentNotifications } from "../lib/hooks";
 import { useAuthStore } from "../lib/auth";
-import type { CohortRiskRow, CourseDifficultyRow } from "../lib/api";
+import type { CohortRiskRow, CourseDifficultyRow, StudentNotificationOut } from "../lib/api";
 import {
   AlertTriangle,
   Users,
@@ -23,7 +23,12 @@ import {
   Brain,
   Activity,
   Star,
+  MessageSquare,
+  ClipboardList,
+  FileText,
+  Trophy,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard")({ component: Dashboard });
 
@@ -97,6 +102,29 @@ function difficultyHeat(rating: number) {
   if (rating >= 0.75) return "bg-red-500";
   if (rating >= 0.55) return "bg-amber-500";
   return "bg-emerald-500";
+}
+
+function notificationIcon(eventType: string) {
+  if (eventType === "chat_message") return MessageSquare;
+  if (eventType === "quiz_assigned") return ClipboardList;
+  if (eventType === "assignment_assigned") return FileText;
+  if (eventType === "competition_approved") return Trophy;
+  return Bell;
+}
+
+function formatWhen(iso: string): string {
+  const dt = new Date(iso);
+  if (Number.isNaN(dt.getTime())) return "";
+
+  const diffMs = Date.now() - dt.getTime();
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return dt.toLocaleDateString();
 }
 
 /* ── Student Risk Table Columns ───────────────────────────────────── */
@@ -316,7 +344,7 @@ function Dashboard() {
   if (isError) {
     return (
       <main className="page-wrap px-4 py-12">
-        <div className="island-shell rounded-2xl p-6 text-center text-red-600">
+        <div className="bg-surface-container-lowest rounded-xl ghost-border ambient-shadow rounded-2xl p-6 text-center text-red-600">
           <AlertTriangle className="mx-auto mb-2 h-8 w-8" />
           <p>Failed to load dashboard. Is the backend running?</p>
           <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
@@ -337,17 +365,20 @@ function Dashboard() {
     ? data.cohort_risks.filter((r) => r.batch === batchFilter)
     : data.cohort_risks;
   return (
-    <main className="page-wrap px-4 pb-8 pt-8">
-      {/* Header */}
-      <section className="mb-8">
-        <p className="island-kicker mb-1">AI-OS</p>
-        <h1 className="display-title text-3xl font-bold text-[var(--sea-ink)] sm:text-4xl">
-          Institutional Intelligence Dashboard
-        </h1>
-        <p className="mt-2 text-[var(--sea-ink-soft)]">
-          Real-time cohort risk clusters, burnout analysis & course difficulty
-          heatmap.
-        </p>
+    <main className="page-wrap px-4 pb-8 pt-8 flex-1">
+      {/* Hero Header */}
+      <section className="mb-10 overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 shadow-sm relative">
+        <div className="absolute top-0 right-0 -m-16 h-48 w-48 rounded-full bg-emerald-500/20 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 -m-16 h-48 w-48 rounded-full bg-teal-500/20 blur-3xl"></div>
+        <div className="relative px-8 py-10 z-10 backdrop-blur-sm">
+          <p className="island-kicker mb-2 text-emerald-600 dark:text-emerald-400">AI-OS Admin</p>
+          <h1 className="font-headline text-3xl font-bold tracking-tight text-[var(--sea-ink)] sm:text-5xl">
+            Institutional Intelligence
+          </h1>
+          <p className="mt-3 text-lg font-medium text-[var(--sea-ink-soft)] max-w-2xl">
+            Real-time cohort risk clusters, burnout analysis & course difficulty heatmap.
+          </p>
+        </div>
       </section>
 
       {/* KPI Cards */}
@@ -383,7 +414,7 @@ function Dashboard() {
       </section>
 
       {/* Cohort Risk Table */}
-      <section className="island-shell mb-8 rounded-2xl p-6">
+      <section className="bg-surface-container-lowest rounded-xl ghost-border ambient-shadow mb-8 rounded-2xl p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-[var(--sea-ink)]">
             Cohort Risk Clusters
@@ -420,7 +451,7 @@ function Dashboard() {
       </section>
 
       {/* Course Heatmap Table */}
-      <section className="island-shell rounded-2xl p-6">
+      <section className="bg-surface-container-lowest rounded-xl ghost-border ambient-shadow rounded-2xl p-6">
         <h2 className="mb-4 text-lg font-bold text-[var(--sea-ink)]">
           Course Difficulty Heatmap
         </h2>
@@ -454,7 +485,7 @@ function StudentPersonalDashboard() {
   if (isError || !data) {
     return (
       <main className="page-wrap px-4 py-12">
-        <div className="island-shell rounded-2xl p-6 text-center text-red-600">
+        <div className="bg-surface-container-lowest rounded-xl ghost-border ambient-shadow rounded-2xl p-6 text-center text-red-600">
           <AlertTriangle className="mx-auto mb-2 h-8 w-8" />
           <p>Failed to load your profile.</p>
           <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">{(error as Error)?.message}</p>
@@ -467,16 +498,20 @@ function StudentPersonalDashboard() {
   const healthPct = data.academic_health_score;
 
   return (
-    <main className="page-wrap px-4 pb-8 pt-8">
-      {/* Header */}
-      <section className="mb-8">
-        <p className="island-kicker mb-1">My Dashboard</p>
-        <h1 className="display-title text-3xl font-bold text-[var(--sea-ink)] sm:text-4xl">
-          Welcome back, {user?.name}
-        </h1>
-        <p className="mt-2 text-[var(--sea-ink-soft)]">
-          Here's your academic health snapshot.
-        </p>
+    <main className="page-wrap px-4 pb-8 pt-8 flex-1 w-full box-border">
+      {/* Hero Header */}
+      <section className="mb-10 overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 shadow-sm relative">
+        <div className="absolute -top-10 -right-10 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl"></div>
+        <div className="absolute -bottom-10 -left-10 h-64 w-64 rounded-full bg-purple-500/20 blur-3xl"></div>
+        <div className="relative z-10 px-6 sm:px-10 py-10 backdrop-blur-sm">
+          <p className="island-kicker mb-2 text-indigo-600 dark:text-indigo-400">My Dashboard</p>
+          <h1 className="font-headline text-4xl font-extrabold tracking-tight text-[var(--sea-ink)] sm:text-5xl">
+            Welcome back, <span className="bg-gradient-to-r from-indigo-600 to-purple-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-purple-400">{user?.name}</span>
+          </h1>
+          <p className="mt-3 text-base sm:text-lg font-medium text-[var(--sea-ink-soft)] max-w-2xl">
+            Here's your academic health snapshot and personalized recommendations.
+          </p>
+        </div>
       </section>
 
       {/* KPI Cards */}
@@ -503,8 +538,8 @@ function StudentPersonalDashboard() {
           color="text-emerald-600 dark:text-emerald-400"
           bg="bg-emerald-50 dark:bg-emerald-900/30"
         />
-        <div className="island-shell flex items-center gap-4 rounded-2xl p-5">
-          <div className="rounded-xl p-3 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+        <div className="bg-surface-container-lowest rounded-xl ghost-border ambient-shadow flex items-center gap-4 rounded-2xl p-5">
+          <div className="rounded-xl border border-[var(--line)] bg-white p-3 text-purple-700 dark:text-purple-300 [&>svg]:stroke-[2.3]">
             <Brain className="h-5 w-5" />
           </div>
           <div>
@@ -518,7 +553,7 @@ function StudentPersonalDashboard() {
 
       {/* Risk breakdown (SHAP) */}
       {data.shap_explanation.length > 0 && (
-        <section className="island-shell mb-8 rounded-2xl p-6">
+        <section className="bg-surface-container-lowest rounded-xl ghost-border ambient-shadow mb-8 rounded-2xl p-6">
           <h2 className="mb-4 text-lg font-bold text-[var(--sea-ink)]">
             What's Affecting Your Score
           </h2>
@@ -553,7 +588,7 @@ function StudentPersonalDashboard() {
 
       {/* Recommended interventions */}
       {data.recommended_interventions.length > 0 && (
-        <section className="island-shell rounded-2xl p-6">
+        <section className="bg-surface-container-lowest rounded-xl ghost-border ambient-shadow rounded-2xl p-6">
           <h2 className="mb-4 text-lg font-bold text-[var(--sea-ink)]">
             <TrendingUp className="mr-2 inline h-5 w-5 text-[#4fb8b2]" />
             Recommended Actions
@@ -590,11 +625,20 @@ function KPICard({
   suffix?: string;
 }) {
   return (
-    <div className="island-shell flex items-center gap-4 rounded-2xl p-5">
-      <div className={`rounded-xl p-3 ${bg} ${color}`}>{icon}</div>
-      <div>
-        <p className="text-sm text-[var(--sea-ink-soft)]">{label}</p>
-        <p className="text-2xl font-bold text-[var(--sea-ink)]">{value}{suffix}</p>
+    <div className="bg-surface-container-lowest rounded-xl ghost-border ambient-shadow flex items-center gap-5 rounded-2xl p-6 transition-all hover:-translate-y-1 hover:shadow-xl relative overflow-hidden group">
+      <div className="absolute -right-4 -top-4 opacity-10 blur-xl transform scale-150 transition-transform group-hover:scale-110">
+        <div className={`h-24 w-24 rounded-full ${bg} ${color}`}></div>
+      </div>
+      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[var(--line)] bg-white shadow-sm">
+        <span className={`${color} [&>svg]:h-6 [&>svg]:w-6 [&>svg]:stroke-[2.3]`}>
+          {icon}
+        </span>
+      </div>
+      <div className="relative z-10 w-full min-w-0">
+        <p className="text-xs font-bold text-[var(--sea-ink-soft)] uppercase tracking-wide truncate">{label}</p>
+        <p className="mt-1 text-3xl font-extrabold tracking-tight text-[var(--sea-ink)] drop-shadow-sm">
+          {value}{suffix}
+        </p>
       </div>
     </div>
   );

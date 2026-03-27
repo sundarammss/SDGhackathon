@@ -9,6 +9,7 @@ import {
   fetchDashboardSummary,
   fetchMyStudyStreak,
   fetchStudents,
+  fetchStudentNotifications,
   fetchRiskProfile,
   postWhatIf,
   fetchForumPosts,
@@ -76,6 +77,7 @@ import {
   type DashboardSummary,
   type StudyStreakOut,
   type StudentOut,
+  type StudentNotificationOut,
   type RiskProfile,
   type WhatIfRequest,
   type WhatIfResponse,
@@ -122,6 +124,16 @@ export function useStudents(): UseQueryResult<StudentOut[]> {
     queryKey: ["students"],
     queryFn: fetchStudents,
     staleTime: 60_000,
+  });
+}
+
+export function useStudentNotifications(enabled = true): UseQueryResult<StudentNotificationOut[]> {
+  return useQuery({
+    queryKey: ["student-notifications"],
+    queryFn: fetchStudentNotifications,
+    refetchInterval: 30_000,
+    staleTime: 10_000,
+    enabled,
   });
 }
 
