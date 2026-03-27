@@ -10,6 +10,7 @@ import {
   fetchMyStudyStreak,
   fetchStudents,
   fetchStudentNotifications,
+  markStudentNotificationsSeen,
   fetchRiskProfile,
   postWhatIf,
   fetchForumPosts,
@@ -134,6 +135,16 @@ export function useStudentNotifications(enabled = true): UseQueryResult<StudentN
     refetchInterval: 30_000,
     staleTime: 10_000,
     enabled,
+  });
+}
+
+export function useMarkStudentNotificationsSeen() {
+  const qc = useQueryClient();
+  return useMutation<{ marked: number }, Error, string[]>({
+    mutationFn: markStudentNotificationsSeen,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["student-notifications"] });
+    },
   });
 }
 

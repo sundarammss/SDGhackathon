@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import Footer from '../components/Footer'
 import Sidebar from '../components/Sidebar'
 import { useAuthStore, type AuthUser } from '../lib/auth'
-import { useStudentNotifications } from '../lib/hooks'
+import { useMarkStudentNotificationsSeen, useStudentNotifications } from '../lib/hooks'
 import type { StudentNotificationOut } from '../lib/api'
 import api from '../lib/api'
 
@@ -152,6 +152,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       data: notifications,
       isLoading: notificationsLoading,
     } = useStudentNotifications(user?.role === 'student')
+    const markSeenMutation = useMarkStudentNotificationsSeen()
     const { data: streakData } = useQuery({
       queryKey: ['dashboard', 'my-streak', user?.id],
       queryFn: async () => {
@@ -177,10 +178,27 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       return () => document.removeEventListener('mousedown', handleClick)
     }, [openProfile, openNotifications])
 
+    function markNotificationsSeen(ids: string[]) {
+      if (!ids.length) return
+      markSeenMutation.mutate(ids)
+    }
+
+    function openNotificationsPanel() {
+      setOpenNotifications((v) => {
+        const next = !v
+        if (next) {
+          const unseenIds = (notifications ?? []).filter((n) => !n.is_seen).map((n) => n.id)
+          markNotificationsSeen(unseenIds)
+        }
+        return next
+      })
+      setOpenProfile(false)
+    }
+
     const notificationList = notifications ?? []
     const importantNotifications = notificationList.slice(0, 2)
     const moreNotifications = notificationList.slice(2)
-    const unreadCount = notificationList.length
+    const unreadCount = notificationList.filter((n) => !n.is_seen).length
 
     const initials =
       user?.name
@@ -203,10 +221,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
           <div ref={notificationsRef} className="relative">
             <button
               type="button"
-              onClick={() => {
-                setOpenNotifications((v) => !v)
-                setOpenProfile(false)
-              }}
+              onClick={openNotificationsPanel}
               className="relative flex h-12 w-12 items-center justify-center rounded-full border border-[rgba(198,198,205,0.3)] text-on-surface-variant transition hover:bg-surface-container-low hover:text-on-surface"
               aria-label="Open notifications"
               title="Notifications"
@@ -242,14 +257,26 @@ function AuthGate({ children }: { children: React.ReactNode }) {
                     <>
                       <div className="px-4 py-3 text-[1.05rem] font-medium text-on-surface">Important</div>
                       {importantNotifications.map((n) => (
-                        <NotificationRow key={n.id} notification={n} onOpen={() => setOpenNotifications(false)} />
+                        <NotificationRow
+                          key={n.id}
+                          notification={n}
+                          isSeen={n.is_seen}
+                          onSeen={() => markNotificationsSeen([n.id])}
+                          onOpen={() => setOpenNotifications(false)}
+                        />
                       ))}
 
                       {moreNotifications.length > 0 && (
                         <>
                           <div className="mt-1 border-t border-surface-container-high px-4 py-3 text-[1.05rem] font-medium text-on-surface">More notifications</div>
                           {moreNotifications.map((n) => (
-                            <NotificationRow key={n.id} notification={n} onOpen={() => setOpenNotifications(false)} />
+                            <NotificationRow
+                              key={n.id}
+                              notification={n}
+                              isSeen={n.is_seen}
+                              onSeen={() => markNotificationsSeen([n.id])}
+                              onOpen={() => setOpenNotifications(false)}
+                            />
                           ))}
                         </>
                       )}
@@ -332,10 +359,21 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   }
 }
 
-function NotificationRow({ notification, onOpen }: { notification: StudentNotificationOut; onOpen: () => void }) {
+function NotificationRow({
+  notification,
+  isSeen,
+  onSeen,
+  onOpen,
+}: {
+  notification: StudentNotificationOut
+  isSeen: boolean
+  onSeen: () => void
+  onOpen: () => void
+}) {
   const navigate = useNavigate()
 
   function openNotification() {
+    onSeen()
     onOpen()
     navigate({ to: notification.action_path as never })
   }
@@ -348,7 +386,7 @@ function NotificationRow({ notification, onOpen }: { notification: StudentNotifi
     >
       <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-surface-container-high text-on-surface-variant">
         <MessageSquare className="h-4 w-4" />
-        <span className="absolute -left-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-sky-400" />
+        {!isSeen && <span className="absolute -left-2 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-sky-400" />}
       </div>
 
       <div className="min-w-0 flex-1">

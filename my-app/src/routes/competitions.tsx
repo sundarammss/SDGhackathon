@@ -27,10 +27,10 @@ export const Route = createFileRoute("/competitions")({
 function StatusBadge({ status }: { status: string }) {
   const cls =
     status === "Winner"
-      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+      ? "border border-[rgba(143,71,0,0.24)] bg-[rgba(255,183,132,0.28)] text-[var(--color-tertiary)]"
       : status === "Runner-up"
-        ? "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
-        : "bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300";
+        ? "border border-outline-variant bg-primary-fixed text-on-primary-fixed"
+        : "border border-[var(--chip-line)] bg-[var(--chip-bg)] text-[var(--sea-ink-soft)]";
   return (
     <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
       {status}
@@ -41,20 +41,20 @@ function StatusBadge({ status }: { status: string }) {
 function ApprovalBadge({ status }: { status: string }) {
   if (status === "Approved") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+      <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(0,150,104,0.26)] bg-[rgba(0,150,104,0.12)] px-2.5 py-0.5 text-xs font-semibold text-[var(--lagoon-deep)]">
         <CheckCircle2 className="h-3 w-3" /> Approved
       </span>
     );
   }
   if (status === "Rejected") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/40 dark:text-red-300">
+      <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(186,26,26,0.24)] bg-error-container px-2.5 py-0.5 text-xs font-semibold text-error">
         <XCircle className="h-3 w-3" /> Rejected
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+    <span className="inline-flex items-center gap-1 rounded-full border border-outline-variant bg-surface-container-low px-2.5 py-0.5 text-xs font-semibold text-on-surface-variant">
       <Clock className="h-3 w-3" /> Pending
     </span>
   );
@@ -400,7 +400,7 @@ function CompetitionManager() {
           </div>
           {approved > 0 && (
             <div className="island-shell flex items-center gap-2 rounded-xl px-4 py-2.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              <CheckCircle2 className="h-4 w-4 text-[var(--lagoon)]" />
               <span className="text-sm font-semibold text-[var(--sea-ink)]">
                 {approved} Approved
               </span>
@@ -408,7 +408,7 @@ function CompetitionManager() {
           )}
           {pending > 0 && (
             <div className="island-shell flex items-center gap-2 rounded-xl px-4 py-2.5">
-              <Clock className="h-4 w-4 text-amber-500" />
+              <Clock className="h-4 w-4 text-[var(--color-tertiary)]" />
               <span className="text-sm font-semibold text-[var(--sea-ink)]">
                 {pending} Pending
               </span>

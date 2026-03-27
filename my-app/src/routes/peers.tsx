@@ -13,18 +13,18 @@ export const Route = createFileRoute("/peers")({
 /*  Strength badge colour                                             */
 /* ------------------------------------------------------------------ */
 const strengthColours: Record<string, string> = {
-  "quantitative-reasoning": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  writing: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-  "time-management": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  "critical-thinking": "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-  "lab-skills": "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  presentation: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
-  coding: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
-  "research-methodology": "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200",
+  "quantitative-reasoning": "border border-[var(--chip-line)] bg-[var(--chip-bg)] text-[var(--sea-ink)]",
+  writing: "border border-[var(--chip-line)] bg-primary-fixed text-on-primary-fixed",
+  "time-management": "border border-[rgba(0,150,104,0.24)] bg-[rgba(0,150,104,0.12)] text-[var(--lagoon-deep)]",
+  "critical-thinking": "border border-[rgba(143,71,0,0.24)] bg-[rgba(255,183,132,0.28)] text-[var(--color-tertiary)]",
+  "lab-skills": "border border-outline-variant bg-surface-container text-on-surface",
+  presentation: "border border-[var(--chip-line)] bg-secondary-container text-on-secondary-fixed",
+  coding: "border border-[rgba(0,150,104,0.24)] bg-[rgba(0,150,104,0.12)] text-[var(--lagoon-deep)]",
+  "research-methodology": "border border-[var(--chip-line)] bg-primary-fixed text-on-primary-fixed",
 };
 
 function badgeClass(strength: string) {
-  return strengthColours[strength] ?? "bg-[var(--island-bg)] text-[var(--sea-ink-soft)] border border-[var(--line)]";
+  return strengthColours[strength] ?? "border border-[var(--chip-line)] bg-[var(--chip-bg)] text-[var(--sea-ink)]";
 }
 
 /* ------------------------------------------------------------------ */
@@ -34,10 +34,10 @@ function CompatibilityBar({ score }: { score: number }) {
   const pct = Math.round(score * 100);
   const colour =
     pct >= 80
-      ? "bg-green-500"
+      ? "bg-[var(--lagoon)]"
       : pct >= 60
-        ? "bg-yellow-500"
-        : "bg-red-500";
+        ? "bg-[var(--color-tertiary-fixed-dim)]"
+        : "bg-error";
 
   return (
     <div className="flex items-center gap-3 w-full">
@@ -74,7 +74,7 @@ function PeerCard({
     <div className="rounded-xl border border-[var(--line)] bg-[var(--island-bg)] p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <span className="flex items-center justify-center w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-bold text-sm">
+          <span className="flex items-center justify-center w-9 h-9 rounded-full border border-outline-variant bg-primary-fixed text-on-primary-fixed font-bold text-sm">
             #{rank}
           </span>
           <div>
@@ -92,8 +92,8 @@ function PeerCard({
           title={alreadySent ? "Request sent" : "Send connection request"}
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
             alreadySent
-              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 cursor-default"
-              : "bg-indigo-600 text-white hover:bg-indigo-700"
+              ? "cursor-default border border-[rgba(0,150,104,0.26)] bg-[rgba(0,150,104,0.12)] text-[var(--lagoon-deep)]"
+              : "bg-primary text-on-primary hover:bg-primary-container"
           }`}
         >
           {alreadySent ? (

@@ -67,44 +67,57 @@ export default function Sidebar() {
                       <LayoutDashboard className="h-4 w-4" />
                       Dashboard
                     </Link>
-                    <Link to="/competitions" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
-                      <Trophy className="h-4 w-4" />
-                      Competitions
-                    </Link>
-                    <Link to="/forum" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
-                      <Users className="h-4 w-4" />
-                      Forum
+                    <Link to="/tasks" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
+                      <CheckSquare className="h-4 w-4" />
+                      Tasks
                     </Link>
                     <Link to="/resources" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
                       <BookOpen className="h-4 w-4" />
                       Resources
                     </Link>
+                    <Link to="/peers" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
+                      <UserPlus className="h-4 w-4" />
+                      Peer Match
+                    </Link>
+                    <Link to="/chat" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
+                      <MessageSquare className="h-4 w-4" />
+                      Chat
+                    </Link>
+                    <Link to="/forum" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
+                      <Users className="h-4 w-4" />
+                      Forum
+                    </Link>
+                    <Link to="/competitions" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
+                      <Trophy className="h-4 w-4" />
+                      Competitions
+                    </Link>
+                    <Link to="/simulator" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
+                      <Cpu className="h-4 w-4" />
+                      Simulator
+                    </Link>
                   </>
                 )}
 
-                {user.role !== 'advisor' && (
+                {user.role !== 'advisor' && user.role !== 'student' && (
                   <Link to="/tasks" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
                     <CheckSquare className="h-4 w-4" />
                     Tasks
                   </Link>
                 )}
 
-                <Link to="/peers" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
-                  <UserPlus className="h-4 w-4" />
-                  Peer Match
-                </Link>
-
-                {user.role === 'student' && (
-                  <Link to="/chat" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
-                    <MessageSquare className="h-4 w-4" />
-                    Chat
+                {user.role !== 'student' && (
+                  <Link to="/peers" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
+                    <UserPlus className="h-4 w-4" />
+                    Peer Match
                   </Link>
                 )}
 
-                <Link to="/simulator" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
-                  <Cpu className="h-4 w-4" />
-                  Simulator
-                </Link>
+                {user.role !== 'student' && (
+                  <Link to="/simulator" className={navBaseClass} activeProps={{ className: `${navBaseClass} ${navActiveClass}` }}>
+                    <Cpu className="h-4 w-4" />
+                    Simulator
+                  </Link>
+                )}
               </>
             )}
           </>

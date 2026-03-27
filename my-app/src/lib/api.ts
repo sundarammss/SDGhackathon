@@ -120,6 +120,7 @@ export interface StudentNotificationOut {
   message: string;
   created_at: string;
   action_path: string;
+  is_seen: boolean;
 }
 
 // ── API Functions ────────────────────────────────────────────────────
@@ -143,6 +144,15 @@ export const fetchStudentNotifications = async (): Promise<
   StudentNotificationOut[]
 > => {
   const { data } = await api.get("/api/v1/auth/student-notifications");
+  return data;
+};
+
+export const markStudentNotificationsSeen = async (
+  notificationIds: string[]
+): Promise<{ marked: number }> => {
+  const { data } = await api.post("/api/v1/auth/student-notifications/mark-seen", {
+    notification_ids: notificationIds,
+  });
   return data;
 };
 

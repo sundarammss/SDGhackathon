@@ -9,9 +9,9 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { useDashboardSummary, useRiskProfile, useStudentNotifications } from "../lib/hooks";
+import { useDashboardSummary, useRiskProfile } from "../lib/hooks";
 import { useAuthStore } from "../lib/auth";
-import type { CohortRiskRow, CourseDifficultyRow, StudentNotificationOut } from "../lib/api";
+import type { CohortRiskRow, CourseDifficultyRow } from "../lib/api";
 import {
   AlertTriangle,
   Users,
@@ -23,12 +23,7 @@ import {
   Brain,
   Activity,
   Star,
-  MessageSquare,
-  ClipboardList,
-  FileText,
-  Trophy,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard")({ component: Dashboard });
 
@@ -102,29 +97,6 @@ function difficultyHeat(rating: number) {
   if (rating >= 0.75) return "bg-red-500";
   if (rating >= 0.55) return "bg-amber-500";
   return "bg-emerald-500";
-}
-
-function notificationIcon(eventType: string) {
-  if (eventType === "chat_message") return MessageSquare;
-  if (eventType === "quiz_assigned") return ClipboardList;
-  if (eventType === "assignment_assigned") return FileText;
-  if (eventType === "competition_approved") return Trophy;
-  return Bell;
-}
-
-function formatWhen(iso: string): string {
-  const dt = new Date(iso);
-  if (Number.isNaN(dt.getTime())) return "";
-
-  const diffMs = Date.now() - dt.getTime();
-  const diffMin = Math.floor(diffMs / 60_000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 7) return `${diffDay}d ago`;
-  return dt.toLocaleDateString();
 }
 
 /* ── Student Risk Table Columns ───────────────────────────────────── */
